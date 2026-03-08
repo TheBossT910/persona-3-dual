@@ -20,6 +20,7 @@ float speed = 0.01f;
 float angleIncrement = 0.02f;
 float distance = 0.5f; 
 float lookAhead = 0.3f;
+float characterFacingAngle = 0.0f;
 
 // texture ID
 static int environmentTextureId;
@@ -48,21 +49,34 @@ void CharacterController() {
     if(keys & KEY_L) angle += angleIncrement;
     if(keys & KEY_R) angle -= angleIncrement;
 
-    if(!(keys & KEY_DOWN)) {
-        translateX += forwardX;
-        translateZ += forwardZ;
+    float deltaX = 0.0f;
+    float deltaZ = 0.0f;
+
+    if(keys & KEY_UP) {
+        deltaX += forwardX;
+        deltaZ += forwardZ;
     }
-    if(!(keys & KEY_UP)) {
-        translateX -= forwardX;
-        translateZ -= forwardZ;
+    if(keys & KEY_DOWN) {
+        deltaX -= forwardX;
+        deltaZ -= forwardZ;
     }
-    if(!(keys & KEY_LEFT)) {
-        translateX -= rightX;
-        translateZ -= rightZ;
+    if(keys & KEY_RIGHT) {
+        deltaX -= rightX;
+        deltaZ -= rightZ;
     }
-    if(!(keys & KEY_RIGHT)) {
-        translateX += rightX;
-        translateZ += rightZ;
+    if(keys & KEY_LEFT) {
+        deltaX += rightX;
+        deltaZ += rightZ;
+    }
+
+    translateX += deltaX;
+    translateZ += deltaZ;
+
+    // Only update the angle if button is being pressed
+    if (deltaX != 0.0f || deltaZ != 0.0f) {
+        // return angle in radians and convert to degrees
+        float angleRad = atan2(deltaX, deltaZ);  
+        characterFacingAngle = angleRad * (180.0f / 3.14159265f);
     }
 
     float cameraX = translateX + (sin(angle) * distance);
@@ -153,6 +167,7 @@ ViewState IwatodaiDormView::Update() {
     glPushMatrix();
         // move character
         glTranslatef(translateX, 0, translateZ);
+        glRotatef(characterFacingAngle, 0.0f, 1.0f, 0.0f);
         DrawPlayerModel();
     glPopMatrix(1);
 
