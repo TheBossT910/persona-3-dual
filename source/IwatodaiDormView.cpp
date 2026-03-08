@@ -32,6 +32,55 @@ void DrawPlayerModel() {
     glCallList((u32*)character_bin);
 }
 
+void CharacterController() {
+    scanKeys();
+    u32 keys = keysHeld();
+
+    float speed = 0.01f;
+
+    float forwardX = -sin(angle) * speed;
+    float forwardZ = cos(angle) * speed;
+
+    float rightX = cos(angle) * speed;
+    float rightZ = sin(angle) * speed;
+
+    float angleIncrement = 0.02f;
+    if(keys & KEY_L) angle += angleIncrement;
+    if(keys & KEY_R) angle -= angleIncrement;
+
+    if(!(keys & KEY_DOWN)) {
+        translateX += forwardX;
+        translateZ += forwardZ;
+    }
+    if(!(keys & KEY_UP)) {
+        translateX -= forwardX;
+        translateZ -= forwardZ;
+    }
+    if(!(keys & KEY_LEFT)) {
+        translateX -= rightX;
+        translateZ -= rightZ;
+    }
+    if(!(keys & KEY_RIGHT)) {
+        translateX += rightX;
+        translateZ += rightZ;
+    }
+
+    float distance = 0.5f; 
+    float cameraX = translateX + (sin(angle) * distance);
+    float cameraY = 0.6f;
+    float cameraZ = translateZ - (cos(angle) * distance);
+
+    // look further down the same path the camera is facing
+    float lookAhead = 0.3f;
+    float targetX = translateX - (sin(angle) * lookAhead);
+    float targetY = 0.1f;
+    float targetZ = translateZ + (cos(angle) * lookAhead);
+
+    gluLookAt(  cameraX, cameraY, cameraZ,
+                targetX, targetY, targetZ,
+                0.0f, 1.0f, 0.0f);
+}
+
 void IwatodaiDormView::Init() {
     videoSetMode(MODE_0_3D);
     videoSetModeSub(MODE_0_2D);
@@ -99,51 +148,9 @@ ViewState IwatodaiDormView::Update() {
     scanKeys();
     u32 keys = keysHeld();
 
-    float speed = 0.01f;
-
-    float forwardX = -sin(angle) * speed;
-    float forwardZ = cos(angle) * speed;
-
-    float rightX = cos(angle) * speed;
-    float rightZ = sin(angle) * speed;
-
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
-    float angleIncrement = 0.02f;
-    if(keys & KEY_L) angle += angleIncrement;
-    if(keys & KEY_R) angle -= angleIncrement;
-
-    if(!(keys & KEY_DOWN)) {
-        translateX += forwardX;
-        translateZ += forwardZ;
-    }
-    if(!(keys & KEY_UP)) {
-        translateX -= forwardX;
-        translateZ -= forwardZ;
-    }
-    if(!(keys & KEY_LEFT)) {
-        translateX -= rightX;
-        translateZ -= rightZ;
-    }
-    if(!(keys & KEY_RIGHT)) {
-        translateX += rightX;
-        translateZ += rightZ;
-    }
-
-    float distance = 0.5f; 
-    float cameraX = translateX + (sin(angle) * distance);
-    float cameraY = 0.6f;
-    float cameraZ = translateZ - (cos(angle) * distance);
-
-    // look further down the same path the camera is facing
-    float lookAhead = 0.3f;
-    float targetX = translateX - (sin(angle) * lookAhead);
-    float targetY = 0.1f;
-    float targetZ = translateZ + (cos(angle) * lookAhead);
-
-    gluLookAt(  cameraX, cameraY, cameraZ,
-                targetX, targetY, targetZ,
-                0.0f, 1.0f, 0.0f);
+    CharacterController();
 
     // draw environment
     glPushMatrix();
