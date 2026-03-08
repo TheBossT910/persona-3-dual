@@ -5,16 +5,21 @@
 #include "IwatodaiDormView.h"
 
 // assets
-#include "teapot_bin.h"
+// 3D models
 #include "environment_bin.h"
 #include "character_bin.h"
-
+// textures
 #include "character.h"
 #include "environment.h"
 
 float angle = 0.0;
 float translateX = 0.0;
 float translateZ = 0.0;
+
+float speed = 0.01f;
+float angleIncrement = 0.02f;
+float distance = 0.5f; 
+float lookAhead = 0.3f;
 
 // texture ID
 static int environmentTextureId;
@@ -27,7 +32,6 @@ void DrawEnvironmentModel() {
 }
 
 void DrawPlayerModel() {
-    // glCallList((u32*)teapot_bin);
     glBindTexture(GL_TEXTURE_2D, characterTextureId);
     glCallList((u32*)character_bin);
 }
@@ -36,15 +40,11 @@ void CharacterController() {
     scanKeys();
     u32 keys = keysHeld();
 
-    float speed = 0.01f;
-
     float forwardX = -sin(angle) * speed;
     float forwardZ = cos(angle) * speed;
-
     float rightX = cos(angle) * speed;
     float rightZ = sin(angle) * speed;
 
-    float angleIncrement = 0.02f;
     if(keys & KEY_L) angle += angleIncrement;
     if(keys & KEY_R) angle -= angleIncrement;
 
@@ -65,13 +65,11 @@ void CharacterController() {
         translateZ += rightZ;
     }
 
-    float distance = 0.5f; 
     float cameraX = translateX + (sin(angle) * distance);
     float cameraY = 0.6f;
     float cameraZ = translateZ - (cos(angle) * distance);
 
     // look further down the same path the camera is facing
-    float lookAhead = 0.3f;
     float targetX = translateX - (sin(angle) * lookAhead);
     float targetY = 0.1f;
     float targetZ = translateZ + (cos(angle) * lookAhead);
@@ -100,12 +98,6 @@ void IwatodaiDormView::Init() {
     glLoadIdentity();
     // zNear is how close the camera can see, zFar is the maximum draw distance
     gluPerspective(55, 256.0 / 192.0, 0.1, 40);
-
-    // light id, light color, x, y, z
-    glLight(0, RGB15(31,31,31), 0,                   floattov10(-1.0),  0);
-    glLight(1, RGB15(31,0,31),  0,                   floattov10(1) - 1, 0);
-    glLight(2, RGB15(0,31,0),   floattov10(-1.0),    0,                 0);
-    glLight(3, RGB15(0,0,31),   floattov10(1.0) - 1, 0,                 0);
 
     // load texture
     vramSetBankA(VRAM_A_TEXTURE);
@@ -147,9 +139,9 @@ ViewState IwatodaiDormView::Update() {
 
     scanKeys();
     u32 keys = keysHeld();
-
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
+    // control character
     CharacterController();
 
     // draw environment
@@ -157,7 +149,7 @@ ViewState IwatodaiDormView::Update() {
         DrawEnvironmentModel();
     glPopMatrix(1);
 
-    // draw characters
+    // draw character
     glPushMatrix();
         // move character
         glTranslatef(translateX, 0, translateZ);
