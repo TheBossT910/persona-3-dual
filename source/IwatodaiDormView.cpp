@@ -11,20 +11,52 @@
 // textures
 #include "character.h"
 #include "environment.h"
+// collision
+#include "IwatodaiDormCollision.h"
 
+// world
+const float tileSize = 0.0625f;
+const float worldOffsetX = 2.0f;
+const float worldOffsetZ = 2.0f;
+const float characterRadius = 0.05f;
+
+// movement and viewpoint
+const float speed = 0.01f;
+const float angleIncrement = 0.02f;
+const float distance = 0.5f; 
+const float lookAhead = 0.3f;
+
+// translation
 float angle = 0.0;
 float translateX = 0.0;
 float translateZ = 0.0;
-
-float speed = 0.01f;
-float angleIncrement = 0.02f;
-float distance = 0.5f; 
-float lookAhead = 0.3f;
 float characterFacingAngle = 0.0f;
 
 // texture ID
 static int environmentTextureId;
 static int characterTextureId;
+
+// check collision
+TileType isTileAt(float worldX, float worldZ) {
+    int tileX = (int)((worldX + worldOffsetX) / tileSize);
+    int tileZ = (int)((worldZ + worldOffsetZ) / tileSize);
+
+    // default
+    if (tileX < 0 || tileX >= MAP_WIDTH || tileZ < 0 || tileZ >= MAP_HEIGHT)
+        return TileType::NO_COLLISION;
+
+    // else use collision data
+    return (TileType)collision_map[tileZ][tileX];
+}
+
+// check all 4 corners of the character's bounding box
+int isTileWalkable(TileType tileType, float worldX, float worldZ) {
+    return
+        (isTileAt(worldX - characterRadius, worldZ - characterRadius) != tileType) &&
+        (isTileAt(worldX + characterRadius, worldZ - characterRadius) != tileType) &&
+        (isTileAt(worldX - characterRadius, worldZ + characterRadius) != tileType) &&
+        (isTileAt(worldX + characterRadius, worldZ + characterRadius) != tileType);
+}
 
 void DrawEnvironmentModel() {
     // bind texture before drawing
@@ -69,10 +101,24 @@ void CharacterController() {
         deltaZ += rightZ;
     }
 
-    translateX += deltaX;
-    translateZ += deltaZ;
+    float nextX = translateX + deltaX;
+    float nextZ = translateZ + deltaZ;
 
-    // Only update the angle if button is being pressed
+    // try full movement first
+    if (isTileWalkable(TileType::COLLISION, nextX, nextZ)) {
+        translateX = nextX;
+        translateZ = nextZ;
+    }
+    // if blocked, try X only (slide along Z wall)
+    else if (isTileWalkable(TileType::COLLISION, nextX, translateZ)) {
+        translateX = nextX;
+    }
+    // if blocked, try Z only (slide along X wall)
+    else if (isTileWalkable(TileType::COLLISION, translateX, nextZ)) {
+        translateZ = nextZ;
+    }
+
+    // only update the angle if button is being pressed
     if (deltaX != 0.0f || deltaZ != 0.0f) {
         // return angle in radians and convert to degrees
         float angleRad = atan2(deltaX, deltaZ);  
@@ -173,7 +219,10 @@ ViewState IwatodaiDormView::Update() {
 
     glFlush(0);
 
-    iprintf("\x1b[10;0HIwatodaiDormView");
+    // print coordinates (64x64 area from 0,0 to 64,64)
+    iprintf("\x1b[12;0Htile: %d, %d",
+        (int)((translateX + worldOffsetX) / tileSize),
+        (int)((translateZ + worldOffsetZ) / tileSize));
 
     return ViewState::KEEP_CURRENT;
 }
