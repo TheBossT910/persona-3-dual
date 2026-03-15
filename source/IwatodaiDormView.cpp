@@ -22,7 +22,7 @@ const float characterRadius = 0.05f;
 
 // movement and viewpoint
 const float speed = 0.01f;
-const float angleIncrement = 0.02f;
+const float angleIncrement = 0.05f;
 const float distance = 0.5f; 
 const float lookAhead = 0.3f;
 
