@@ -16,7 +16,7 @@
 
 // world
 const float tileSize = 0.0625f;
-const float worldOffsetX = 2.0f;
+const float worldOffsetX = 1.8125f;
 const float worldOffsetZ = 2.0f;
 const float characterRadius = 0.05f;
 
@@ -138,6 +138,12 @@ void CharacterController() {
                 targetX, targetY, targetZ,
                 0.0f, 1.0f, 0.0f);
 }
+
+// void InteractionController() {
+//     if(isTileWalkable(TileType::NO_COLLISION, translateX, translateZ)) {
+
+//     }
+// }
 
 void IwatodaiDormView::Init() {
     videoSetMode(MODE_0_3D);
