@@ -139,11 +139,17 @@ void CharacterController() {
                 0.0f, 1.0f, 0.0f);
 }
 
-// void InteractionController() {
-//     if(isTileWalkable(TileType::NO_COLLISION, translateX, translateZ)) {
-
-//     }
-// }
+void InteractionController() {
+    if(isTileAt(translateX, translateZ) == TileType::NEXT_SCENE) {
+        iprintf("\x1b[12;0HNext scene zone");
+    } else if(isTileAt(translateX, translateZ) == TileType::PREV_SCENE) {
+        iprintf("\x1b[12;0HPrev scene zone");
+    } else if(isTileAt(translateX, translateZ) == TileType::CHARACTER_Akihiko) {
+        iprintf("\x1b[12;0HAkihiko zone");
+    } else {
+        iprintf("\x1b[2J");
+    }
+}
 
 void IwatodaiDormView::Init() {
     videoSetMode(MODE_0_3D);
@@ -225,8 +231,10 @@ ViewState IwatodaiDormView::Update() {
 
     glFlush(0);
 
+    InteractionController();
+
     // print coordinates (64x64 area from 0,0 to 64,64)
-    iprintf("\x1b[12;0Htile: %d, %d",
+    iprintf("\x1b[10;0Htile: %d, %d",
         (int)((translateX + worldOffsetX) / tileSize),
         (int)((translateZ + worldOffsetZ) / tileSize));
 

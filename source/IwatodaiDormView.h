@@ -7,7 +7,7 @@ enum class TileType {
     SAVE = 2,           // save interaction point
     PREV_SCENE = 3,     // load last location
     NEXT_SCENE = 4,     // load next location
-    CHARACTER_Akihiko = 5
+    CHARACTER_Akihiko = 100
 };
 
 // implementing from View
