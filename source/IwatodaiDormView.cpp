@@ -280,6 +280,12 @@ void IwatodaiDormView::Init() {
     bgSetPriority(bgAkihiko, 1);
 
     bgUpdate();
+
+    // set character initial position
+    translateX = -1.3;
+    translateZ = -0.8;
+    angle = -1.6;
+    characterFacingAngle = 91.67;
 }
 
 ViewState IwatodaiDormView::Update() {
@@ -312,10 +318,13 @@ ViewState IwatodaiDormView::Update() {
     InteractionController(keys);
 
     // print coordinates (64x64 area from 0,0 to 64,64)
-    iprintf("\x1b[10;16Htile: %d, %d",
+    iprintf("\x1b[10;0Htile(x,z): %d, %d",
         (int)((translateX + worldOffsetX) / tileSize),
         (int)((translateZ + worldOffsetZ) / tileSize));
-
+    iprintf("\x1b[11;0Htranslate(x,z): %d, %d",
+        (int)(translateX * 100),
+        (int)(translateZ * 100));
+    iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(angle * 100), (int)(characterFacingAngle * 100));
     return ViewState::KEEP_CURRENT;
 }
 
