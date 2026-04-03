@@ -196,13 +196,13 @@ ViewState MainMenuView::Update() {
     }
 
     // fade in fog
-    if (fogOpacity < 6 && frame % 4 == 0) {
+    if (displayFog && fogOpacity < 6 && frame % 4 == 0) {
         fogOpacity++;
         REG_BLDALPHA = fogOpacity | ((16 - fogOpacity) << 8);
     }
 
     // rotate fog
-    if (frame % 4 == 0) {
+    if (displayFog && frame % 4 == 0) {
         waveAngle += 50;        
         int rotationSpeed = baseSpeed + ((sinLerp(waveAngle) * fluctuation) >> 12);
         currentRotation += rotationSpeed;
@@ -214,21 +214,22 @@ ViewState MainMenuView::Update() {
 }
 
 void MainMenuView::Cleanup() {
-    // reset brightness
+    // clear screen
     setBrightness(3, 0);
+    consoleClear();
+
+    // reset vram
+    vramSetBankA(VRAM_A_LCD);
+    vramSetBankB(VRAM_B_LCD);
+    vramSetBankD(VRAM_D_LCD);
+    vramSetBankE(VRAM_E_LCD);
+
+    // reset backgrounds
+    dmaFillHalfWords(0, bgGetMapPtr(bg[0]), 8192);
+    dmaFillHalfWords(1, bgGetMapPtr(bg[0]), 2048);
+    dmaFillHalfWords(2, bgGetMapPtr(bg[0]), 2048);
 
     // disable blending
     REG_BLDCNT = 0;
     REG_BLDALPHA = 0;
-
-    // hide all backgrounds
-    bgHide(bg[0]);
-    bgHide(bg[1]);
-    bgHide(bg[2]);
-
-    // clear all sprites from oam
-    oamClear(&oamMain, 0, 0);
-
-    // clear text
-    iprintf("\x1b[2J"); 
 }

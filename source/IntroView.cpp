@@ -251,18 +251,22 @@ ViewState IntroView::Update() {
 }
 
 void IntroView::Cleanup() {
-    // reset brightness
+    // clear screen
     setBrightness(3, 0);
+    consoleClear();
 
-    // disable blending
-    REG_BLDCNT = 0;
-    REG_BLDALPHA = 0;
+    // reset vram
+    vramSetBankA(VRAM_A_LCD);
+    vramSetBankB(VRAM_B_LCD);
+    vramSetBankD(VRAM_D_LCD);
+    vramSetBankE(VRAM_E_LCD);
 
-    // hide all backgrounds
-    bgHide(bg[0]);
-    bgHide(bg[1]);
-    bgHide(bg[2]);
-    bgHide(bg[3]);
+    // reset backgrounds
+    dmaFillHalfWords(0, bgGetMapPtr(bg[0]), 8192);  // silhouette
+    dmaFillHalfWords(0, bgGetMapPtr(bg[3]), 8192);  // overlay
+    // 256x256 backgrounds use 2048 bytes of map memory
+    dmaFillHalfWords(0, bgGetMapPtr(bg[1]), 2048);  // room
+    dmaFillHalfWords(0, bgGetMapPtr(bg[2]), 2048);  // sky
 
     // clear all sprites from oam
     oamClear(&oamMain, 0, 0);
@@ -272,6 +276,7 @@ void IntroView::Cleanup() {
         oamFreeGfx(&oamMain, logoSprite.gfx);
     }
 
-    // clear text
-    iprintf("\x1b[2J"); 
+    // disable blending
+    REG_BLDCNT = 0;
+    REG_BLDALPHA = 0;
 }

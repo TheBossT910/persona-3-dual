@@ -13,9 +13,9 @@
 #include "environment.h"
 // collision
 #include "IwatodaiDormCollision.h"
-
-// DEBUG
+// 2D
 #include "akihiko.h"
+
 // sub screen
 int bgAkihiko;
 PrintConsole console;
@@ -140,9 +140,9 @@ void CharacterController() {
     float targetY = 0.1f;
     float targetZ = translateZ + (cos(angle) * lookAhead);
 
-    gluLookAt(  cameraX, cameraY, cameraZ,
-                targetX, targetY, targetZ,
-                0.0f, 1.0f, 0.0f);
+    gluLookAt(cameraX, cameraY, cameraZ,
+              targetX, targetY, targetZ,
+              0.0f, 1.0f, 0.0f);
 }
 
 void InteractionController() {
@@ -216,14 +216,15 @@ void IwatodaiDormView::Init() {
     glPolyFmt(POLY_ALPHA(31) | POLY_CULL_BACK);
     glColor3b(255, 255, 255);   // keep white so texture colors aren't tinted
 
-
     // sub screen, 2D and console
     bgAkihiko = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 0, 1);
     dmaFillHalfWords(0, bgGetMapPtr(bgAkihiko), 2048);
+    // hiding Akihiko by default
+    bgHide(bgAkihiko);
 
     dmaCopy(akihikoTiles,  bgGetGfxPtr(bgAkihiko), akihikoTilesLen);
     dmaCopy(akihikoMap,  bgGetMapPtr(bgAkihiko), akihikoMapLen);
-    vramSetBankH(VRAM_H_LCD);                   // can only access extended palettes in LCD mode
+    vramSetBankH(VRAM_H_LCD);                   // can only write to extended palettes in LCD mode
     dmaCopy(akihikoPal,  &VRAM_H_EXT_PALETTE[0][0], akihikoPalLen);
     vramSetBankH(VRAM_H_SUB_BG_EXT_PALETTE);    // map vram banks to extended palettes
     
@@ -231,12 +232,10 @@ void IwatodaiDormView::Init() {
     consoleInit(&console, 1, BgType_Text4bpp, BgSize_T_256x256, 4, 5, false, true);
     consoleSelect(&console);
 
-    // adjust sub screen image and console to sit correclty on each other
+    // adjust sub screen image and console to sit correctly on each other
     bgSetPriority(console.bgId, 0);
     bgSetPriority(bgAkihiko, 1);
 
-    // hiding Akihiko by default
-    bgHide(bgAkihiko);
     bgUpdate();
 }
 
@@ -278,8 +277,20 @@ ViewState IwatodaiDormView::Update() {
 }
 
 void IwatodaiDormView::Cleanup() {
+    // clear screen
     setBrightness(3, 0);
     consoleClear();
 
-    // TODO: cleanup 3D, 2D
+    // reset vram
+    vramSetBankA(VRAM_A_LCD);
+    vramSetBankB(VRAM_B_LCD);
+    vramSetBankC(VRAM_C_LCD);
+    vramSetBankH(VRAM_H_LCD);
+
+    // reset backgrounds
+    dmaFillHalfWords(0, bgGetMapPtr(bgAkihiko), 2048);
+
+    // reset textures
+    glDeleteTextures(1, &environmentTextureId);
+    glDeleteTextures(1, &characterTextureId);
 }
