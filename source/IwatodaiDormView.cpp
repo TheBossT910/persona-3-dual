@@ -14,6 +14,12 @@
 // collision
 #include "IwatodaiDormCollision.h"
 
+// DEBUG
+#include "akihiko.h"
+// sub screen
+int bgAkihiko;
+PrintConsole console;
+
 // world
 const float tileSize = 0.0625f;
 const float worldOffsetX = 1.8125f;
@@ -140,14 +146,20 @@ void CharacterController() {
 }
 
 void InteractionController() {
-    if(isTileAt(translateX, translateZ) == TileType::NEXT_SCENE) {
-        iprintf("\x1b[12;0HNext scene zone");
-    } else if(isTileAt(translateX, translateZ) == TileType::PREV_SCENE) {
-        iprintf("\x1b[12;0HPrev scene zone");
-    } else if(isTileAt(translateX, translateZ) == TileType::CHARACTER_Akihiko) {
-        iprintf("\x1b[12;0HAkihiko zone");
-    } else {
-        iprintf("\x1b[2J");
+    switch(isTileAt(translateX, translateZ)) {
+        case TileType::NEXT_SCENE:
+            iprintf("\x1b[12;0HNext scene zone");
+            break;
+        case TileType::PREV_SCENE:
+            iprintf("\x1b[12;0HPrev scene zone");
+            break;
+        case TileType::CHARACTER_Akihiko:
+            iprintf("\x1b[12;16HAkihiko zone");
+            bgShow(bgAkihiko);
+            break;
+        default:
+            consoleClear();
+            bgHide(bgAkihiko);
     }
 }
 
@@ -155,6 +167,12 @@ void IwatodaiDormView::Init() {
     videoSetMode(MODE_0_3D);
     videoSetModeSub(MODE_0_2D);
 
+    vramSetBankA(VRAM_A_TEXTURE);
+    vramSetBankB(VRAM_B_TEXTURE);
+    vramSetBankC(VRAM_C_SUB_BG);
+    bgExtPaletteEnableSub();
+
+    // main screen, 3D
     glInit();
     glEnable(GL_ANTIALIAS);
     glEnable(GL_TEXTURE_2D);    // enable texturing
@@ -163,17 +181,13 @@ void IwatodaiDormView::Init() {
     glClearPolyID(63);
     glClearDepth(0x7FFF);
 
-    // set size of screen
+    // set size of main screen
     glViewport(0,0,255,191);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     // zNear is how close the camera can see, zFar is the maximum draw distance
-    gluPerspective(55, 256.0 / 192.0, 0.1, 40);
-
-    // load texture
-    vramSetBankA(VRAM_A_TEXTURE);
-    vramSetBankB(VRAM_B_TEXTURE);
+    gluPerspective(55, 256.0 / 192.0, 0.1, 40);    
 
     // environment
     glGenTextures(1, &environmentTextureId);
@@ -202,12 +216,34 @@ void IwatodaiDormView::Init() {
     glPolyFmt(POLY_ALPHA(31) | POLY_CULL_BACK);
     glColor3b(255, 255, 255);   // keep white so texture colors aren't tinted
 
-    consoleDemoInit();
+
+    // sub screen, 2D and console
+    bgAkihiko = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 0, 1);
+    dmaFillHalfWords(0, bgGetMapPtr(bgAkihiko), 2048);
+
+    dmaCopy(akihikoTiles,  bgGetGfxPtr(bgAkihiko), akihikoTilesLen);
+    dmaCopy(akihikoMap,  bgGetMapPtr(bgAkihiko), akihikoMapLen);
+    vramSetBankH(VRAM_H_LCD);                   // can only access extended palettes in LCD mode
+    dmaCopy(akihikoPal,  &VRAM_H_EXT_PALETTE[0][0], akihikoPalLen);
+    vramSetBankH(VRAM_H_SUB_BG_EXT_PALETTE);    // map vram banks to extended palettes
+    
+    // setup console
+    consoleInit(&console, 1, BgType_Text4bpp, BgSize_T_256x256, 4, 5, false, true);
+    consoleSelect(&console);
+
+    // adjust sub screen image and console to sit correclty on each other
+    bgSetPriority(console.bgId, 0);
+    bgSetPriority(bgAkihiko, 1);
+
+    // hiding Akihiko by default
+    bgHide(bgAkihiko);
+    bgUpdate();
 }
 
 ViewState IwatodaiDormView::Update() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    bgUpdate();
 
     scanKeys();
     u32 keys = keysHeld();
@@ -234,7 +270,7 @@ ViewState IwatodaiDormView::Update() {
     InteractionController();
 
     // print coordinates (64x64 area from 0,0 to 64,64)
-    iprintf("\x1b[10;0Htile: %d, %d",
+    iprintf("\x1b[10;16Htile: %d, %d",
         (int)((translateX + worldOffsetX) / tileSize),
         (int)((translateZ + worldOffsetZ) / tileSize));
 
@@ -243,5 +279,7 @@ ViewState IwatodaiDormView::Update() {
 
 void IwatodaiDormView::Cleanup() {
     setBrightness(3, 0);
-    iprintf("\x1b[2J");
+    consoleClear();
+
+    // TODO: cleanup 3D, 2D
 }
