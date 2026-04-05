@@ -2,10 +2,10 @@
 #include <stdio.h>
 
 // states
-#include "View.h"
-#include "IntroView.h"
-#include "MainMenuView.h"
-#include "IwatodaiDormView.h"
+#include "core/View.h"
+#include "views/IntroView.h"
+#include "views/MainMenuView.h"
+#include "views/IwatodaiDormView.h"
 
 volatile int frame = 0;
 View* currentView = nullptr;

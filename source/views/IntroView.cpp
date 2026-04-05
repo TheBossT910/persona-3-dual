@@ -1,6 +1,6 @@
 #include <nds.h>
 #include <stdio.h>
-#include "globals.h"
+#include "core/globals.h"
 #include "IntroView.h"
 
 // assets

@@ -1,5 +1,5 @@
 #pragma once
-#include "View.h"
+#include "core/View.h"
 
 //a simple sprite structure
 typedef struct

@@ -1,5 +1,5 @@
 #pragma once
-#include "View.h"
+#include "core/View.h"
 
 enum class TileType {
     NO_COLLISION = 0,   // walkable area

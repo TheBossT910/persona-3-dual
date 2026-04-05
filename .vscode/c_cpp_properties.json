@@ -11,7 +11,8 @@
                 "${DEVKITPRO}/devkitARM/arm-none-eabi/include/**",
                 "${DEVKITPRO}/libnds/include/**",
                 "${DEVKITPRO}/calico/include",
-                "${workspaceFolder}/build"
+                "${workspaceFolder}/build",
+                "${workspaceFolder}/source"
             ],
             "defines": [
                 "_DEBUG",

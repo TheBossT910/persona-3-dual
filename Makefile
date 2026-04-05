@@ -18,9 +18,9 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(shell basename $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source source/views source/controllers source/core
 DATA		:=	data
-INCLUDES	:=	include
+INCLUDES	:=	include source
 GRAPHICS	:=	graphics
 
 GAME_TITLE	   := Persona 3 DS
