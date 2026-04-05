@@ -154,7 +154,6 @@ ViewState IwatodaiDormView::Update() {
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
     // control character
-    // CharacterController();
     cameraPosition camPos = playerCtrl->Update(keys);
     gluLookAt(camPos.cameraX, camPos.cameraY, camPos.cameraZ,
               camPos.targetX, camPos.targetY, camPos.targetZ,
