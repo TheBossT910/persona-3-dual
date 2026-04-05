@@ -30,7 +30,7 @@ struct characterPosition {
 
 class CharacterController {
     public:
-        // TODO: fetch these from collison header files
+        // 3D environment
         const int mapWidth;
         const int mapHeight;
         const uint8_t* collisionMap;
