@@ -1,5 +1,6 @@
 #pragma once
 #include "core/View.h"
+#include "controllers/DialogueController.h"
 #include "controllers/CharacterController.h"
 
 // implementing from View

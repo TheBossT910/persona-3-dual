@@ -24,6 +24,8 @@ PrintConsole console;
 static int environmentTextureId;
 static int characterTextureId;
 
+DialogueController* dialogueCtrl;
+
 void DrawEnvironmentModel() {
     // bind texture before drawing
     glBindTexture(GL_TEXTURE_2D, environmentTextureId);
@@ -36,43 +38,7 @@ void DrawPlayerModel() {
     glCallList((u32*)character_bin);
 }
 
-// TODO: move to seperate file
-void DialougeController() {
-    int line = 0;    
-    while (true) {
-        consoleClear();
-        switch(line) {
-            case 0:
-                iprintf("\x1b[12;16HWhat's up?");
-                break;
-            case 1:
-                iprintf("\x1b[12;16HTime to go?");
-                break;
-            case 2:
-                iprintf("\x1b[12;16HDon't slack off.");
-                break;
-            default:
-                return;
-        }
-
-        scanKeys();
-        u32 keys = keysHeld();
-        if (keys & KEY_A) {
-            line++;
-        } else if (keys & KEY_B) {
-            line--;
-        } if (keys & KEY_START) {
-            return;
-        }
-
-        // delay between input and display
-        for (int i = 0; i < 6; i++) {
-            swiWaitForVBlank();
-        }
-    }
-}
-
-// TODO: move to seperate file
+// TODO: move to seperate file?
 void InteractionController(TileType tileType, u32 inputKeys) {
     switch(tileType) {
         case TileType::NEXT_SCENE:
@@ -89,7 +55,7 @@ void InteractionController(TileType tileType, u32 inputKeys) {
                 for (int i = 0; i < 6; i++) {
                     swiWaitForVBlank();
                 }
-                DialougeController();
+                dialogueCtrl->Update();
             }
             break;
         default:
@@ -173,7 +139,9 @@ void IwatodaiDormView::Init() {
 
     bgUpdate();
 
+    // get controllers
     playerCtrl = new CharacterController(MAP_WIDTH, MAP_HEIGHT, &collision_map[0][0], tileSize, worldOffsetX, worldOffsetZ, characterRadius, speed, angleIncrement, distance, lookAhead, angle, translateX, translateZ, characterFacingAngle);
+    dialogueCtrl = new DialogueController();
 }
 
 ViewState IwatodaiDormView::Update() {
