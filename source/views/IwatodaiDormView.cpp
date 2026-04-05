@@ -20,49 +20,9 @@
 int bgAkihiko;
 PrintConsole console;
 
-// world
-const float tileSize = 0.0625f;
-const float worldOffsetX = 1.8125f;
-const float worldOffsetZ = 1.6875f;
-const float characterRadius = 0.05f;
-
-// movement and viewpoint
-const float speed = 0.01f;
-const float angleIncrement = 0.05f;
-const float distance = 0.5f; 
-const float lookAhead = 0.3f;
-
-// translation
-float angle = 0.0;
-float translateX = 0.0;
-float translateZ = 0.0;
-float characterFacingAngle = 0.0f;
-
 // texture ID
 static int environmentTextureId;
 static int characterTextureId;
-
-// check collision
-TileType isTileAt(float worldX, float worldZ) {
-    int tileX = (int)((worldX + worldOffsetX) / tileSize);
-    int tileZ = (int)((worldZ + worldOffsetZ) / tileSize);
-
-    // default
-    if (tileX < 0 || tileX >= MAP_WIDTH || tileZ < 0 || tileZ >= MAP_HEIGHT)
-        return TileType::NO_COLLISION;
-
-    // else use collision data
-    return (TileType)collision_map[tileZ][tileX];
-}
-
-// check all 4 corners of the character's bounding box
-int isTileWalkable(TileType tileType, float worldX, float worldZ) {
-    return
-        (isTileAt(worldX - characterRadius, worldZ - characterRadius) != tileType) &&
-        (isTileAt(worldX + characterRadius, worldZ - characterRadius) != tileType) &&
-        (isTileAt(worldX - characterRadius, worldZ + characterRadius) != tileType) &&
-        (isTileAt(worldX + characterRadius, worldZ + characterRadius) != tileType);
-}
 
 void DrawEnvironmentModel() {
     // bind texture before drawing
@@ -71,81 +31,12 @@ void DrawEnvironmentModel() {
 }
 
 void DrawPlayerModel() {
+    // bind texture before drawing
     glBindTexture(GL_TEXTURE_2D, characterTextureId);
     glCallList((u32*)character_bin);
 }
 
-void CharacterController() {
-    scanKeys();
-    u32 keys = keysHeld();
-
-    float forwardX = -sin(angle) * speed;
-    float forwardZ = cos(angle) * speed;
-    float rightX = cos(angle) * speed;
-    float rightZ = sin(angle) * speed;
-
-    if(keys & KEY_L) angle -= angleIncrement;
-    if(keys & KEY_R) angle += angleIncrement;
-
-    float deltaX = 0.0f;
-    float deltaZ = 0.0f;
-
-    if(keys & KEY_UP) {
-        deltaX += forwardX;
-        deltaZ += forwardZ;
-    }
-    if(keys & KEY_DOWN) {
-        deltaX -= forwardX;
-        deltaZ -= forwardZ;
-    }
-    if(keys & KEY_RIGHT) {
-        deltaX -= rightX;
-        deltaZ -= rightZ;
-    }
-    if(keys & KEY_LEFT) {
-        deltaX += rightX;
-        deltaZ += rightZ;
-    }
-
-    float nextX = translateX + deltaX;
-    float nextZ = translateZ + deltaZ;
-
-    // try full movement first
-    if (isTileWalkable(TileType::COLLISION, nextX, nextZ)) {
-        translateX = nextX;
-        translateZ = nextZ;
-    }
-    // if blocked, try X only (slide along Z wall)
-    else if (isTileWalkable(TileType::COLLISION, nextX, translateZ)) {
-        translateX = nextX;
-    }
-    // if blocked, try Z only (slide along X wall)
-    else if (isTileWalkable(TileType::COLLISION, translateX, nextZ)) {
-        translateZ = nextZ;
-    }
-
-    // only update the angle if button is being pressed
-    if (deltaX != 0.0f || deltaZ != 0.0f) {
-        // return angle in radians and convert to degrees
-        float angleRad = atan2(deltaX, deltaZ);  
-        characterFacingAngle = angleRad * (180.0f / 3.14159265f);
-    }
-
-    float cameraX = translateX + (sin(angle) * distance);
-    float cameraY = 0.6f;
-    float cameraZ = translateZ - (cos(angle) * distance);
-
-    // look further down the same path the camera is facing
-    float targetX = translateX - (sin(angle) * lookAhead);
-    float targetY = 0.1f;
-    float targetZ = translateZ + (cos(angle) * lookAhead);
-
-    gluLookAt(cameraX, cameraY, cameraZ,
-              targetX, targetY, targetZ,
-              0.0f, 1.0f, 0.0f);
-}
-
-
+// TODO: move to seperate file
 void DialougeController() {
     int line = 0;    
     while (true) {
@@ -181,8 +72,9 @@ void DialougeController() {
     }
 }
 
-void InteractionController(u32 inputKeys) {
-    switch(isTileAt(translateX, translateZ)) {
+// TODO: move to seperate file
+void InteractionController(TileType tileType, u32 inputKeys) {
+    switch(tileType) {
         case TileType::NEXT_SCENE:
             iprintf("\x1b[12;0HNext scene zone");
             break;
@@ -281,11 +173,7 @@ void IwatodaiDormView::Init() {
 
     bgUpdate();
 
-    // set character initial position
-    translateX = -1.3;
-    translateZ = -0.8;
-    angle = -1.6;
-    characterFacingAngle = 91.67;
+    playerCtrl = new CharacterController(MAP_WIDTH, MAP_HEIGHT, &collision_map[0][0], tileSize, worldOffsetX, worldOffsetZ, characterRadius, speed, angleIncrement, distance, lookAhead, angle, translateX, translateZ, characterFacingAngle);
 }
 
 ViewState IwatodaiDormView::Update() {
@@ -298,7 +186,11 @@ ViewState IwatodaiDormView::Update() {
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
     // control character
-    CharacterController();
+    // CharacterController();
+    cameraPosition camPos = playerCtrl->Update(keys);
+    gluLookAt(camPos.cameraX, camPos.cameraY, camPos.cameraZ,
+              camPos.targetX, camPos.targetY, camPos.targetZ,
+              camPos.upX, camPos.upY, camPos.upZ);
 
     // draw environment
     glPushMatrix();
@@ -308,14 +200,15 @@ ViewState IwatodaiDormView::Update() {
     // draw character
     glPushMatrix();
         // move character
-        glTranslatef(translateX, 0, translateZ);
-        glRotatef(characterFacingAngle, 0.0f, 1.0f, 0.0f);
+        characterPosition charPos = playerCtrl->isCharacterAt();
+        glTranslatef(charPos.x, 0, charPos.z);
+        glRotatef(charPos.facingAngle, 0.0f, 1.0f, 0.0f);
         DrawPlayerModel();
     glPopMatrix(1);
 
     glFlush(0);
 
-    InteractionController(keys);
+    InteractionController(playerCtrl->isTileAt(), keys);
 
     // print coordinates (64x64 area from 0,0 to 64,64)
     iprintf("\x1b[10;0Htile(x,z): %d, %d",
@@ -325,6 +218,7 @@ ViewState IwatodaiDormView::Update() {
         (int)(translateX * 100),
         (int)(translateZ * 100));
     iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(angle * 100), (int)(characterFacingAngle * 100));
+
     return ViewState::KEEP_CURRENT;
 }
 

@@ -1,18 +1,28 @@
 #pragma once
 #include "core/View.h"
-
-enum class TileType {
-    NO_COLLISION = 0,   // walkable area
-    COLLISION = 1,      // non-walkable area. Legacy = 5
-    SAVE = 2,           // save interaction point
-    PREV_SCENE = 3,     // load last location
-    NEXT_SCENE = 4,     // load next location
-    CHARACTER_Akihiko = 100
-};
+#include "controllers/CharacterController.h"
 
 // implementing from View
 class IwatodaiDormView : public View {
     public:
+        // controllers
+        CharacterController* playerCtrl;
+            // world
+            const float tileSize = 0.0625f;
+            const float worldOffsetX = 1.8125f;
+            const float worldOffsetZ = 1.6875f;
+            const float characterRadius = 0.05f;
+            // movement and viewpoint
+            const float speed = 0.01f;
+            const float angleIncrement = 0.05f;
+            const float distance = 0.5f; 
+            const float lookAhead = 0.3f;
+            // set character initial translation position
+            const float translateX = -1.3;
+            const float translateZ = -0.8;
+            const float angle = -1.6;
+            const float characterFacingAngle = 91.67;
+
         // override tells compiler we intend to override a virtual fn in a base class (i.e. View)
         void Init() override;
         ViewState Update() override;
