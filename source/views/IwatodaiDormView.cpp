@@ -179,12 +179,12 @@ ViewState IwatodaiDormView::Update() {
 
     // print coordinates (64x64 area from 0,0 to 64,64)
     iprintf("\x1b[10;0Htile(x,z): %d, %d",
-        (int)((translateX + worldOffsetX) / tileSize),
-        (int)((translateZ + worldOffsetZ) / tileSize));
+        (int)((charPos.x + worldOffsetX) / tileSize),
+        (int)((charPos.z + worldOffsetZ) / tileSize));
     iprintf("\x1b[11;0Htranslate(x,z): %d, %d",
-        (int)(translateX * 100),
-        (int)(translateZ * 100));
-    iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(angle * 100), (int)(characterFacingAngle * 100));
+        (int)(charPos.x * 100),
+        (int)(charPos.z * 100));
+    iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
 
     return ViewState::KEEP_CURRENT;
 }

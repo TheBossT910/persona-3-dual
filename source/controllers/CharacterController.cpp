@@ -40,6 +40,7 @@ characterPosition CharacterController::isCharacterAt() {
 
     charPos.x = translateX;
     charPos.z = translateZ;
+    charPos.angle = angle;
     charPos.facingAngle = characterFacingAngle;
 
     return charPos;

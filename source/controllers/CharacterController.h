@@ -25,6 +25,7 @@ struct cameraPosition {
 struct characterPosition {
     float x;
     float z;
+    float angle;
     float facingAngle;
 };
 
