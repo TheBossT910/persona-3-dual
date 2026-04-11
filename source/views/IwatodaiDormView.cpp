@@ -38,7 +38,6 @@ void DrawPlayerModel() {
     glCallList((u32*)character_bin);
 }
 
-// TODO: move to seperate file?
 void InteractionController(TileType tileType, u32 inputKeys) {
     switch(tileType) {
         case TileType::NEXT_SCENE:

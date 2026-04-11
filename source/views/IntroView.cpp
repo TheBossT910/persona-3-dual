@@ -95,17 +95,9 @@ void IntroView::Init() {
     dmaCopy(logoSpritePal, SPRITE_PALETTE, logoSpritePalLen);
     logoSprite.gfx = logoSpriteGfxPtr;
 
-	// text uses ansi escape sequences
-	iprintf("Taha Rashid\n");
-	iprintf("\033[31;1;4mFeb 18, 2025\n\x1b[39m");
-	iprintf("Line 3\n");
-	iprintf("\x1b[32;1mLine 4\n\x1b[39m");
-	iprintf("\x1b[31;1;4mLine 5\n\x1b[39m");
-	iprintf("Line 6\n");
-
-	// NOTE: bottom screen has 24 lines, 32 columns (from 0 -> 23, 0 -> 32)
-	iprintf("\x1b[23;31HTest!");
-	// center the text by doing (32 / 2) - (len / 2)
+	// NOTE: The text uses ansi escape sequences.
+    // The bottom screen has 24 lines, 32 columns (from 0 -> 23, 0 -> 32)
+	// Center the text by doing (32 / 2) - (len / 2)
 	iprintf("\x1b[11;8HPress Any Button");
 
 	// for slide in animation
@@ -146,11 +138,6 @@ ViewState IntroView::Update() {
     }
     
     touchRead(&touchXY);
-
-    // print at using ansi escape sequence \x1b[line;columnH 
-    iprintf("\x1b[10;0HFrame = %d",frame);
-    iprintf("\x1b[16;0HTouch x = %04X, %04X\n", touchXY.rawx, touchXY.px);
-    iprintf("Touch y = %04X, %04X\n", touchXY.rawy, touchXY.py);
 
     // scroll silhouette background
     // animate X (moving right towards 0)

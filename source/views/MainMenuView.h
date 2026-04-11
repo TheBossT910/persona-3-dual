@@ -13,24 +13,21 @@ class MainMenuView : public View {
         int bg[3];
 
         // for options
-        Option menuOptions[4] = 
+        Option menuOptions[2] = 
         {
             {"Load Game", false},
-            {"New Game  (N/A)", false},
-            {"Config    (N/A)", false},
             {"Return to Title", false}
         };
 
-        Option sceneOptions[4] = 
+        // TODO: add Gekkoukan Classroom & Tartarus Level 1 demo levels
+        Option sceneOptions[2] = 
         {
             {"Iwatodai Dorm", false},
-            {"Gekkoukan Classroom", false},
-            {"Tartarus Level 1", false},
             {"Back", false}
         };
 
-        const int menuOptionCount = 4;
-        const int sceneOptionCount = 4;
+        const int menuOptionCount = 2;
+        const int sceneOptionCount = 2;
         // generic
         Option *options;
         int optionCount;

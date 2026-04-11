@@ -131,7 +131,7 @@ ViewState MainMenuView::Update() {
         selectedOption = 0;
         options = sceneOptions;
         optionCount = sceneOptionCount;
-    } else if (menuOptions[3].selected) {
+    } else if (menuOptions[1].selected) {
         // selected "Return to Title"
         for(int i = 0; i > -16; i--) {
             setBrightness(3, i);
@@ -149,9 +149,9 @@ ViewState MainMenuView::Update() {
             }
         }
         return ViewState::IWATODAI_DORM;
-    } else if (sceneOptions[3].selected) {
+    } else if (sceneOptions[1].selected) {
         // select menuOptions
-        sceneOptions[3].selected = false;
+        sceneOptions[1].selected = false;
         selectedOption = 0;
         options = menuOptions;
         optionCount = menuOptionCount;
@@ -159,7 +159,7 @@ ViewState MainMenuView::Update() {
 
     for (int option = 0; option < optionCount; option++) {
         // display options
-        iprintf("%c%c %s\n", option == selectedOption ? '*' : ' ', options[option].selected ? '>' : ' ', options[option].name);
+        iprintf("%c %s\n", option == selectedOption ? '>' : ' ', options[option].name);
     }
 
     // scroll silhouette background
