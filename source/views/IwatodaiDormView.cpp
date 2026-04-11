@@ -41,13 +41,13 @@ void DrawPlayerModel() {
 void InteractionController(TileType tileType, u32 inputKeys) {
     switch(tileType) {
         case TileType::NEXT_SCENE:
-            iprintf("\x1b[12;0HNext scene zone");
+            iprintf("\x1b[0;0HNext scene zone");
             break;
         case TileType::PREV_SCENE:
-            iprintf("\x1b[12;0HPrev scene zone");
+            iprintf("\x1b[0;0HPrev scene zone");
             break;
         case TileType::CHARACTER_Akihiko:
-            iprintf("\x1b[12;16HPress A to talk");
+            iprintf("\x1b[0;0HPress A to talk");
             if (inputKeys & KEY_A) {
                 // delay between input and controller
                 for (int i = 0; i < 6; i++) {
