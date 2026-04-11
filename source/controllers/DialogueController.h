@@ -24,4 +24,7 @@ class DialogueController {
         DialogueController();
         void Update();
         void DialogueDemo(int demoImageId);
+    private:
+        void animateText(string text);
+        void delay();
 };
