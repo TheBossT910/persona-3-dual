@@ -49,13 +49,12 @@ void InteractionController(TileType tileType, u32 inputKeys) {
             break;
         case TileType::CHARACTER_Akihiko:
             iprintf("\x1b[12;16HPress A to talk");
-            bgShow(bgAkihiko);
             if (inputKeys & KEY_A) {
                 // delay between input and controller
                 for (int i = 0; i < 6; i++) {
                     swiWaitForVBlank();
                 }
-                dialogueCtrl->Update();
+                dialogueCtrl->DialogueDemo(bgAkihiko);
             }
             break;
         default:
