@@ -6,7 +6,8 @@ using namespace std;
 // declare dialogue struct exists
 struct dialogue;
 struct dialogueSelection {
-    string optionText;
+    string text;
+    bool isSelected;
     dialogue* next;     // where to lead on select
 };
 struct dialogue {
@@ -15,7 +16,6 @@ struct dialogue {
     int imageId;    // image to display
     dialogue* prev; // point to previous dialogue
     dialogue* next; // point to next dialogue
-    bool isSelection;                     // if the current dialogue has selection options
     vector<dialogueSelection> selections; // selection options
 };
 
