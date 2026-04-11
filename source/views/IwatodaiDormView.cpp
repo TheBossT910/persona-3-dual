@@ -54,7 +54,7 @@ void InteractionController(TileType tileType, u32 inputKeys) {
                 for (int i = 0; i < 6; i++) {
                     swiWaitForVBlank();
                 }
-                dialogueCtrl->DialogueDemo(bgAkihiko);
+                dialogueCtrl->dialogueDemo(bgAkihiko);
             }
             break;
         default:
@@ -153,7 +153,7 @@ ViewState IwatodaiDormView::Update() {
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
     // control character
-    cameraPosition camPos = playerCtrl->Update(keys);
+    cameraPosition camPos = playerCtrl->update(keys);
     gluLookAt(camPos.cameraX, camPos.cameraY, camPos.cameraZ,
               camPos.targetX, camPos.targetY, camPos.targetZ,
               camPos.upX, camPos.upY, camPos.upZ);

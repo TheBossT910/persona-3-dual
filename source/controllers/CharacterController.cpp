@@ -46,7 +46,7 @@ characterPosition CharacterController::isCharacterAt() {
     return charPos;
 }
 
-cameraPosition CharacterController::Update(u32 keys) {
+cameraPosition CharacterController::update(u32 keys) {
     float forwardX;
     float forwardZ;
     float rightX;

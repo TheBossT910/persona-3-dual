@@ -79,7 +79,7 @@ class CharacterController {
             characterFacingAngle = iCharacterFacingAngle;
         };
 
-        cameraPosition Update(u32 keys);
+        cameraPosition update(u32 keys);
         characterPosition isCharacterAt();
         TileType isTileAt();
     

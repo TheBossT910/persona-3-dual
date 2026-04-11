@@ -4,9 +4,9 @@
 
 DialogueController::DialogueController() {}
 
-void DialogueController::Update() {}
+void DialogueController::update() {}
 
-void DialogueController::DialogueDemo(int demoImageId) {
+void DialogueController::dialogueDemo(int demoImageId) {
     // setup dialogue (3 lines)
     dialogue lines[3] = {};
     lines[0] = { "Akihiko", "text line 1", demoImageId, NULL, &lines[1], {} };

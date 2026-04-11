@@ -22,8 +22,8 @@ struct dialogue {
 class DialogueController {
     public:
         DialogueController();
-        void Update();
-        void DialogueDemo(int demoImageId);
+        void update();
+        void dialogueDemo(int demoImageId);
     private:
         void animateText(string text);
         void delay();
