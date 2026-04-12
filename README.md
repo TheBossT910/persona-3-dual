@@ -52,7 +52,7 @@ I chose to make a demake of one of my favourite games, Persona 3, for a few reas
 - [x] Basic camera controls
 - [x] Character model + movement controls
 - [x] Collision + interaction detection
-- [ ] Dialouge system
+- [x] Dialogue system
 - [ ] Combat system
 - [ ] Music/SFX playback
 - [ ] Iwatodai Dorm — fully detailed environment
