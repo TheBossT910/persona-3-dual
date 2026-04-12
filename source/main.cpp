@@ -6,6 +6,7 @@
 #include "views/IntroView.h"
 #include "views/MainMenuView.h"
 #include "views/IwatodaiDormView.h"
+#include "views/MusicView.h"
 
 volatile int frame = 0;
 View* currentView = nullptr;
@@ -56,6 +57,8 @@ int main(void) {
                 SwitchView(new MainMenuView());
             } else if (nextState == ViewState::IWATODAI_DORM) {
                 SwitchView(new IwatodaiDormView());
+            } else if (nextState == ViewState::MUSIC) {
+                SwitchView(new MusicView());
             }
         }
 

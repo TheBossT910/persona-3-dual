@@ -20,14 +20,15 @@ class MainMenuView : public View {
         };
 
         // TODO: add Gekkoukan Classroom & Tartarus Level 1 demo levels
-        Option sceneOptions[2] = 
+        Option sceneOptions[3] = 
         {
             {"Iwatodai Dorm", false},
+            {"Music", false},
             {"Back", false}
         };
 
         const int menuOptionCount = 2;
-        const int sceneOptionCount = 2;
+        const int sceneOptionCount = 3;
         // generic
         Option *options;
         int optionCount;
