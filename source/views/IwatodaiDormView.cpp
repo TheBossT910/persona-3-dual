@@ -123,7 +123,7 @@ void IwatodaiDormView::Init() {
     lines[2] = { "Akihiko", "line 3, sel", bgAkihiko, &lines[1], NULL, { sel1, sel2 } };
 
     // point to music
-    musicCtrl.init("nitro:/music/changing_seasons.mp3", 0.0f);
+    musicCtrl.init("nitro:/music/changing_seasons.mp3", 0.0f, -1.0f);
 }
 
 ViewState IwatodaiDormView::Update() {

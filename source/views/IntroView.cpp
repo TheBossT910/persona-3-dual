@@ -136,7 +136,7 @@ void IntroView::Init() {
 	bgUpdate();
 
     // point to music
-    musicCtrl.init("nitro:/music/tightrope.mp3", 17.5f);
+    musicCtrl.init("nitro:/music/tightrope.mp3", 33.825f, 50.22f);
 
     // hide sub screen text and attribution text layer
     REG_BLDCNT_SUB = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_SRC_BG0 | BLEND_DST_BG0 | BLEND_DST_BG1 | BLEND_DST_BACKDROP;

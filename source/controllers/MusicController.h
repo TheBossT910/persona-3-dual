@@ -6,7 +6,7 @@ class MusicController {
         MusicController();
 
         // Call once when your View initialises
-        void init(const char* filePath, float loopStartSeconds);
+        void init(const char* filePath, float loopStartSeconds, float loopEndSeconds);
 
         // Call every frame in your View's Update()
         void update();

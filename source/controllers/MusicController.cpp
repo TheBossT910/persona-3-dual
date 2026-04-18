@@ -23,7 +23,11 @@ static struct mad_synth  madSynth;
 static s16 leftoverBuffer[MAX_SAMPLES_PER_FRAME * 2];
 static int leftoverCount = 0;
 static int leftoverIndex = 0;
-long s_loopStartOffset = 0; // file byte offset to loop back to
+
+static long  s_loopStartOffset  = 0;
+static float s_loopStartSeconds = 0.0f;
+static float s_loopEndSeconds   = -1.0f;    // -1.0f = play until end of file
+static float s_elapsedSeconds   = 0.0f;
 
 // internal helpers
 static inline s16 fixedToS16(mad_fixed_t sample) {
@@ -74,10 +78,11 @@ static bool refillStreamBuffer() {
 
 static void restartMp3() {
     fseek(s_mp3File, s_loopStartOffset, SEEK_SET);
-    s_fileEOF     = false;
-    s_guardAdded  = false;
-    leftoverCount = 0;
-    leftoverIndex = 0;
+    s_fileEOF        = false;
+    s_guardAdded     = false;
+    leftoverCount    = 0;
+    leftoverIndex    = 0;
+    s_elapsedSeconds = s_loopStartSeconds;  // reset to loop start time, not 0
     madReinit();
 
     size_t bytesRead = fread(s_streamBuf, 1, FILE_READ_CHUNK, s_mp3File);
@@ -144,9 +149,14 @@ static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_forma
             continue;
         }
 
+        // Check if we've hit the loop end point
+        if (s_loopEndSeconds > 0.0f && s_elapsedSeconds >= s_loopEndSeconds) {
+            s_pendingRestart = true;
+            break;
+        }
+
         if (mad_frame_decode(&madFrame, &madStream) != 0) {
             if (MAD_RECOVERABLE(madStream.error)) continue;
-
             if (madStream.error == MAD_ERROR_BUFLEN) {
                 if (!refillStreamBuffer()) {
                     s_pendingRestart = true;
@@ -160,6 +170,9 @@ static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_forma
         mad_synth_frame(&madSynth, &madFrame);
         int  decoded_samples = madSynth.pcm.length;
         bool isStereo        = (madSynth.pcm.channels == 2);
+
+        // Track elapsed time — one frame's worth per decode
+        s_elapsedSeconds += (float)decoded_samples / (float)madSynth.pcm.samplerate;
 
         leftoverIndex = 0;
         leftoverCount = decoded_samples;
@@ -213,7 +226,10 @@ int MusicController::probeFirstFrame() {
     return sampleRate;
 }
 
-void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f) {
+void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, float loopEndSeconds = -1.0f) {
+    s_loopEndSeconds  = loopEndSeconds;
+    s_elapsedSeconds  = 0.0f;
+
     s_pendingRestart = false;
     s_fileEOF        = false;
     s_guardAdded     = false;
@@ -232,13 +248,19 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f) 
 
     // Find and store the loop point
     if (loopStartSeconds > 0.0f) {
-        s_loopStartOffset = findOffsetAtTime(loopStartSeconds);
+        s_loopStartSeconds = loopStartSeconds;  // e.g. 18.0f
+        s_loopStartOffset  = findOffsetAtTime(loopStartSeconds);
     } else {
-        s_loopStartOffset = 0;
+        s_loopStartSeconds = 0.0f;
+        s_loopStartOffset  = 0;
     }
 
-    // Reset fully before opening stream
-    fseek(s_mp3File, s_loopStartOffset == 0 ? 0 : 0, SEEK_SET);
+    // Reset to beginning for actual playback (intro plays from 0)
+    fseek(s_mp3File, 0, SEEK_SET);
+    s_fileEOF    = false;
+    s_guardAdded = false;
+    madReinit();
+    refillStreamBuffer();
 
     // reset leftover tracking (discard the probe frame's audio)
     leftoverCount = 0;
