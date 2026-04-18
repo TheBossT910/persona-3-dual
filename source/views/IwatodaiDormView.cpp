@@ -140,6 +140,7 @@ void IwatodaiDormView::Init() {
     // get controllers
     playerCtrl = new CharacterController(MAP_WIDTH, MAP_HEIGHT, &collision_map[0][0], tileSize, worldOffsetX, worldOffsetZ, characterRadius, speed, angleIncrement, distance, lookAhead, angle, translateX, translateZ, characterFacingAngle);
     dialogueCtrl = new DialogueController();
+    music.init("nitro:/music/song.mp3");
 }
 
 ViewState IwatodaiDormView::Update() {
@@ -184,6 +185,8 @@ ViewState IwatodaiDormView::Update() {
         (int)(charPos.z * 100));
     iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
 
+    music.update();
+
     return ViewState::KEEP_CURRENT;
 }
 
@@ -204,4 +207,7 @@ void IwatodaiDormView::Cleanup() {
     // reset textures
     glDeleteTextures(1, &environmentTextureId);
     glDeleteTextures(1, &characterTextureId);
+
+    // cleanup controllers
+    music.cleanup();
 }

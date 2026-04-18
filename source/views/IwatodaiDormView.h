@@ -2,6 +2,7 @@
 #include "core/View.h"
 #include "controllers/DialogueController.h"
 #include "controllers/CharacterController.h"
+#include "controllers/MusicController.h"
 
 // implementing from View
 class IwatodaiDormView : public View {
@@ -23,7 +24,8 @@ class IwatodaiDormView : public View {
             const float translateZ = -0.8;
             const float angle = -1.6;
             const float characterFacingAngle = 91.67;
-
+        MusicController music;
+        
         // override tells compiler we intend to override a virtual fn in a base class (i.e. View)
         void Init() override;
         ViewState Update() override;
