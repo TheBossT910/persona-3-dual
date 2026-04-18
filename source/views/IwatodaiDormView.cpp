@@ -194,18 +194,18 @@ void IwatodaiDormView::Cleanup() {
     setBrightness(3, 0);
     consoleClear();
 
-    // reset vram
-    vramSetBankA(VRAM_A_LCD);
-    vramSetBankB(VRAM_B_LCD);
-    vramSetBankC(VRAM_C_LCD);
-    vramSetBankH(VRAM_H_LCD);
-
     // reset backgrounds
     dmaFillHalfWords(0, bgGetMapPtr(bgAkihiko), 2048);
 
     // reset textures
     glDeleteTextures(1, &environmentTextureId);
     glDeleteTextures(1, &characterTextureId);
+
+    // reset vram
+    vramSetBankA(VRAM_A_LCD);
+    vramSetBankB(VRAM_B_LCD);
+    vramSetBankC(VRAM_C_LCD);
+    vramSetBankH(VRAM_H_LCD);
 
     // cleanup controllers
     delete playerCtrl;

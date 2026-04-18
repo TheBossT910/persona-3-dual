@@ -137,9 +137,9 @@ ViewState MainMenuView::Update() {
         options = sceneOptions;
         optionCount = sceneOptionCount;
     } else if (menuOptions[1].selected) {
+        musicCtrl.pause();
         // selected "Return to Title"
         for(int i = 0; i > -16; i--) {
-            musicCtrl.pause();
             setBrightness(3, i);
             for (int duration = 0; duration <= 2; duration++) {
                 swiWaitForVBlank();
@@ -147,9 +147,9 @@ ViewState MainMenuView::Update() {
         }
         return ViewState::INTRO;
     } else if (sceneOptions[0].selected) {
+        musicCtrl.pause();
         // selected "Iwatodai Dorm"
         for(int i = 0; i > -16; i--) {
-            musicCtrl.pause();
             setBrightness(3, i);
             for (int duration = 0; duration <= 2; duration++) {
                 swiWaitForVBlank();
@@ -181,7 +181,7 @@ ViewState MainMenuView::Update() {
 
     // animate Y (moving up towards 0)
     if (silhouetteY > 0 && frame % 5 == 0) {
-        silhouetteY += (-silhouetteY) / 6 + 1; 
+        silhouetteY -= (silhouetteY / 6) + 1; 
         if (silhouetteY < 0) silhouetteY = 0;
     }
 
@@ -228,16 +228,16 @@ void MainMenuView::Cleanup() {
     setBrightness(3, 0);
     consoleClear();
 
+    // reset backgrounds
+    dmaFillHalfWords(0, bgGetMapPtr(bg[0]), 8192);
+    dmaFillHalfWords(1, bgGetMapPtr(bg[1]), 2048);
+    dmaFillHalfWords(2, bgGetMapPtr(bg[2]), 2048);
+
     // reset vram
     vramSetBankA(VRAM_A_LCD);
     vramSetBankB(VRAM_B_LCD);
     vramSetBankD(VRAM_D_LCD);
     vramSetBankE(VRAM_E_LCD);
-
-    // reset backgrounds
-    dmaFillHalfWords(0, bgGetMapPtr(bg[0]), 8192);
-    dmaFillHalfWords(1, bgGetMapPtr(bg[0]), 2048);
-    dmaFillHalfWords(2, bgGetMapPtr(bg[0]), 2048);
 
     // disable blending
     REG_BLDCNT = 0;
