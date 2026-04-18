@@ -6,7 +6,7 @@ class MusicController {
         MusicController();
 
         // Call once when your View initialises
-        void init(const char* filePath);
+        void init(const char* filePath, float loopStartSeconds);
 
         // Call every frame in your View's Update()
         void update();
@@ -19,5 +19,5 @@ class MusicController {
         void resume();
 
     private:
-        int  probeFirstFrame();   // returns sample rate
+        int  probeFirstFrame();     // returns sample rate  
 };

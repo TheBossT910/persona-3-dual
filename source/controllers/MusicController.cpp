@@ -23,6 +23,7 @@ static struct mad_synth  madSynth;
 static s16 leftoverBuffer[MAX_SAMPLES_PER_FRAME * 2];
 static int leftoverCount = 0;
 static int leftoverIndex = 0;
+long s_loopStartOffset = 0; // file byte offset to loop back to
 
 // internal helpers
 static inline s16 fixedToS16(mad_fixed_t sample) {
@@ -72,7 +73,7 @@ static bool refillStreamBuffer() {
 }
 
 static void restartMp3() {
-    fseek(s_mp3File, 0, SEEK_SET);
+    fseek(s_mp3File, s_loopStartOffset, SEEK_SET);
     s_fileEOF     = false;
     s_guardAdded  = false;
     leftoverCount = 0;
@@ -86,6 +87,35 @@ static void restartMp3() {
         bytesRead += MAD_BUFFER_GUARD;
     }
     mad_stream_buffer(&madStream, s_streamBuf, bytesRead);
+}
+
+// Decode and discard frames until we reach the target time,
+// then snapshot the file position as the loop point
+static long findOffsetAtTime(float targetSeconds) {
+    float elapsed = 0.0f;
+
+    while (elapsed < targetSeconds) {
+        while (mad_frame_decode(&madFrame, &madStream) != 0) {
+            if (madStream.error == MAD_ERROR_BUFLEN) {
+                if (!refillStreamBuffer()) return -1;
+                continue;
+            }
+            if (!MAD_RECOVERABLE(madStream.error)) return -1;
+        }
+
+        mad_synth_frame(&madSynth, &madFrame);
+
+        // Each frame's duration in seconds
+        float frameDuration = (float)madSynth.pcm.length / (float)madSynth.pcm.samplerate;
+        elapsed += frameDuration;
+    }
+
+    // Snapshot where we are in the file right now
+    // next_frame points to the start of the next unread frame in the buffer
+    // We calculate its actual file position from how much buffer is ahead of it
+    size_t bufferAhead = madStream.bufend - madStream.next_frame;
+    long filePos = ftell(s_mp3File) - (long)bufferAhead;
+    return filePos;
 }
 
 // maxmod stream callback
@@ -183,7 +213,7 @@ int MusicController::probeFirstFrame() {
     return sampleRate;
 }
 
-void MusicController::init(const char* filePath) {
+void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f) {
     s_pendingRestart = false;
     s_fileEOF        = false;
     s_guardAdded     = false;
@@ -199,6 +229,16 @@ void MusicController::init(const char* filePath) {
 
     int sampleRate = probeFirstFrame();
     if (sampleRate < 0) { iprintf("MusicController: decode error\n"); return; }
+
+    // Find and store the loop point
+    if (loopStartSeconds > 0.0f) {
+        s_loopStartOffset = findOffsetAtTime(loopStartSeconds);
+    } else {
+        s_loopStartOffset = 0;
+    }
+
+    // Reset fully before opening stream
+    fseek(s_mp3File, s_loopStartOffset == 0 ? 0 : 0, SEEK_SET);
 
     // reset leftover tracking (discard the probe frame's audio)
     leftoverCount = 0;
