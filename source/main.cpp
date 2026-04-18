@@ -43,7 +43,7 @@ int main(void) {
     // SwitchView(new IntroView());
 
     // DEBUG
-    SwitchView(new MusicView());
+    SwitchView(new IntroView());
 
 	while(pmMainLoop()) {
 		swiWaitForVBlank();

@@ -16,7 +16,7 @@ typedef struct
 // implementing from View
 class IntroView : public View {
     private:
-        Sprite logoSprite;
+        Sprite logoSprite[2];
         int bg[4];
         touchPosition touchXY;
         
@@ -25,11 +25,11 @@ class IntroView : public View {
         int silhouetteY = 192;
         
         // for bottom screen text animation
-        bool animateText = true;
+        bool animateText = false;
         int duration = 4;
         int durationCounter = 0;
-        int brightness = 16;
-        int brightnessCounter = 0;
+        int textAlpha = 0;
+        int textAlphaDirection = 0;
         
         // for logoSprite
         bool displayLogo = false;
