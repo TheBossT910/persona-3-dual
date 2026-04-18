@@ -24,6 +24,8 @@
 static FILE*           s_mp3File    = nullptr;
 static unsigned char*  s_streamBuf  = nullptr;      // Heap-allocated input buffer for libmad
 static bool            s_fileEOF    = false;         // Have we hit the end of the file?
+static bool            s_guardAdded     = false;
+static bool            s_pendingRestart = false;
 
 struct mad_stream madStream;
 struct mad_frame  madFrame;
@@ -85,6 +87,12 @@ static bool refillStreamBuffer() {
         }
     }
 
+    // FIX: If we've hit EOF, already appended the guard bytes, and libmad 
+    // is STILL asking for data (meaning it finished the last frame), we are truly done.
+    if (s_fileEOF && s_guardAdded && bytesRead == 0) {
+        return false;
+    }
+
     size_t totalBytes = remaining + bytesRead;
 
     if (totalBytes == 0) {
@@ -92,13 +100,24 @@ static bool refillStreamBuffer() {
     }
 
     // Append guard bytes at EOF so libmad can flush its last frame
-    if (s_fileEOF) {
+    // FIX: Only append the guard bytes ONCE
+    if (s_fileEOF && !s_guardAdded) {
         memset(s_streamBuf + totalBytes, 0, MAD_BUFFER_GUARD);
         totalBytes += MAD_BUFFER_GUARD;
+        s_guardAdded = true;
     }
 
     mad_stream_buffer(&madStream, s_streamBuf, totalBytes);
     return true;
+}
+
+static void madReinit() {
+    mad_stream_finish(&madStream);
+    mad_frame_finish(&madFrame);
+    mad_synth_finish(&madSynth);
+    mad_stream_init(&madStream);
+    mad_frame_init(&madFrame);
+    mad_synth_init(&madSynth);
 }
 
 // -------------------------------------------------------------------
@@ -108,16 +127,11 @@ static bool refillStreamBuffer() {
 static void restartMp3() {
     fseek(s_mp3File, 0, SEEK_SET);
     s_fileEOF    = false;
+    s_guardAdded = false;
     leftoverCount = 0;
     leftoverIndex = 0;
-
     // Finish and fully reinitialise libmad so it re-syncs from frame 0
-    mad_stream_finish(&madStream);
-    mad_frame_finish(&madFrame);
-    mad_synth_finish(&madSynth);
-    mad_stream_init(&madStream);
-    mad_frame_init(&madFrame);
-    mad_synth_init(&madSynth);
+    madReinit();
 
     // Manually prime the buffer — next_frame is null after init so
     // remaining will correctly be 0, and we just fread a fresh chunk
@@ -134,6 +148,10 @@ static void restartMp3() {
 // Init: open file + initialise libmad
 // -------------------------------------------------------------------
 static bool mp3Init() {
+    s_pendingRestart = false;
+    s_fileEOF = false;
+    s_guardAdded = false;
+
     s_mp3File = fopen(MP3_FILE_PATH, "rb");
     if (!s_mp3File) {
         iprintf("Failed to open: %s\n", MP3_FILE_PATH);
@@ -148,11 +166,7 @@ static bool mp3Init() {
         return false;
     }
 
-    mad_stream_init(&madStream);
-    mad_frame_init(&madFrame);
-    mad_synth_init(&madSynth);
-
-    s_fileEOF = false;
+    madReinit();
     refillStreamBuffer();   // Prime libmad with the first chunk
     return true;
 }
@@ -165,12 +179,18 @@ mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_formats form
     s16* output = (s16*)dest;
     mm_word samples_filled = 0;
 
+    // Handle a restart that was flagged at the end of the previous callback
+    if (s_pendingRestart) {
+        s_pendingRestart = false;
+        restartMp3();
+    }
+
     while (samples_filled < length) {
 
-        // 1. Drain any leftover samples from the previous decode first
+        // 1. Drain leftovers first
         if (leftoverCount > 0) {
             int to_copy = leftoverCount;
-            if (samples_filled + to_copy > length) {
+            if ((mm_word)(samples_filled + to_copy) > length) {
                 to_copy = length - samples_filled;
             }
             for (int i = 0; i < to_copy; i++) {
@@ -183,26 +203,27 @@ mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_formats form
             continue;
         }
 
-        // 2. Decode the next MP3 frame from the stream buffer
+        // 2. Decode next frame
         if (mad_frame_decode(&madFrame, &madStream) != 0) {
             if (MAD_RECOVERABLE(madStream.error)) {
-                continue; // Slip past a corrupted frame
+                continue;
             }
 
             if (madStream.error == MAD_ERROR_BUFLEN) {
-                // libmad needs more data — refill from the file
                 if (!refillStreamBuffer()) {
-                    // EOF — loop back to the start
-                    restartMp3();
+                    // Don't restart immediately — fill silence for now,
+                    // restart at the TOP of the next callback invocation
+                    s_pendingRestart = true;
+                    break; // Exit the while loop, return whatever we have
                 }
                 continue;
             }
 
-            // Fatal decode error
+            // Fatal error
             break;
         }
 
-        // 3. Synthesise PCM and stash into the leftover buffer
+        // 3. Synth and stash
         mad_synth_frame(&madSynth, &madFrame);
         int  decoded_samples = madSynth.pcm.length;
         bool isStereo        = (madSynth.pcm.channels == 2);
@@ -216,10 +237,16 @@ mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_formats form
             leftoverBuffer[i * 2]     = left;
             leftoverBuffer[i * 2 + 1] = right;
         }
-        // Loop restarts, hits step 1, copies from fresh leftovers
     }
 
-    return samples_filled;
+    // Zero-fill any samples we couldn't provide to avoid noise
+    while (samples_filled < length) {
+        *output++ = 0;
+        *output++ = 0;
+        samples_filled++;
+    }
+
+    return length; // Always return the full requested length
 }
 
 // -------------------------------------------------------------------
