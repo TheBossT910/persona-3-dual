@@ -1,5 +1,6 @@
 #include <nds.h>
 #include <stdio.h>
+#include <filesystem.h>
 
 // states
 #include "core/View.h"
@@ -38,6 +39,12 @@ int main(void) {
 	// debug init
 	// NOTE: for some reason, we cant use vram bank C. It might be because of consoleDemoInit...
 	consoleDemoInit();
+
+    // load NitroFS
+    if (!nitroFSInit(NULL)) {
+        iprintf("NitroFS init failed!\n");
+        while(1) swiWaitForVBlank();
+    }
 
     // start with IntroView
     // SwitchView(new IntroView());
