@@ -9,6 +9,9 @@
 #include "fogBackground.h"
 
 void MainMenuView::Init() {
+    // point to music
+    musicCtrl.init("nitro:/music/aria_of_the_soul.mp3", 0.0f, -1.0f);
+
     // transition both screens from white
     for(int i = 16; i > 0; i--) {
         setBrightness(3, i);
@@ -16,6 +19,7 @@ void MainMenuView::Init() {
         // wait a few frames
         for (int duration = 0; duration <= 2; duration++) {
             swiWaitForVBlank();
+            musicCtrl.update();
         }
     }
 
@@ -94,6 +98,7 @@ void MainMenuView::Init() {
 		// wait for duration amount of frames
 		for (int frame = 0; frame <= 6; frame++) {
 			swiWaitForVBlank();
+            musicCtrl.update();
 		}
 	}
 
@@ -134,6 +139,7 @@ ViewState MainMenuView::Update() {
     } else if (menuOptions[1].selected) {
         // selected "Return to Title"
         for(int i = 0; i > -16; i--) {
+            musicCtrl.pause();
             setBrightness(3, i);
             for (int duration = 0; duration <= 2; duration++) {
                 swiWaitForVBlank();
@@ -143,6 +149,7 @@ ViewState MainMenuView::Update() {
     } else if (sceneOptions[0].selected) {
         // selected "Iwatodai Dorm"
         for(int i = 0; i > -16; i--) {
+            musicCtrl.pause();
             setBrightness(3, i);
             for (int duration = 0; duration <= 2; duration++) {
                 swiWaitForVBlank();
@@ -162,9 +169,12 @@ ViewState MainMenuView::Update() {
         iprintf("%c %s\n", option == selectedOption ? '>' : ' ', options[option].name);
     }
 
+    musicCtrl.update();
+
     // scroll silhouette background
     // animate X (moving right towards 0)
     if (silhouetteX < 0 && frame % 5 == 0) {
+        // musicCtrl.update();
         silhouetteX += (-silhouetteX) / 6 + 1;
         if (silhouetteX > 0) silhouetteX = 0;
     }
@@ -232,4 +242,7 @@ void MainMenuView::Cleanup() {
     // disable blending
     REG_BLDCNT = 0;
     REG_BLDALPHA = 0;
+
+    // cleanup controllers
+    musicCtrl.cleanup();
 }

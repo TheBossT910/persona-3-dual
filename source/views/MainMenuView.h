@@ -1,5 +1,6 @@
 #pragma once
 #include "core/View.h"
+#include "controllers/MusicController.h"
 
 typedef struct
 {
@@ -10,6 +11,9 @@ typedef struct
 // implementing from View
 class MainMenuView : public View {
     private:
+        // controllers
+        MusicController musicCtrl;
+
         int bg[3];
 
         // for options
