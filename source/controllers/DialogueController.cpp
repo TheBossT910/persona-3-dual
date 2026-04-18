@@ -18,22 +18,21 @@ void DialogueController::start(dialogue* firstLine) {
     consoleClear();
 }
 
-// Returns true while dialogue is still running, false when it finishes
-bool DialogueController::update(u32 keys) {
-    if (!active || current == nullptr) {
+void DialogueController::update(u32 keys) {
+    if (!active || current == NULL) {
         active = false;
-        return false;
+        return;
     }
 
-    // Fresh key presses only, ignore held keys
+    // fresh key presses only, ignore held keys
     u32 pressed = keys & ~prevKeys;
     prevKeys = keys;
 
-    // --- Step 1: Show the dialogue line (animate text) ---
+    // animate in the the dialogue
     if (!isDisplayed) {
         bgShow(current->imageId);
 
-        // Animate one character per frame
+        // animate one character per frame
         if (!animDone) {
             if (animIndex <= (int)current->text.length()) {
                 iprintf("\x1b[12;16H%s \n",
@@ -45,27 +44,28 @@ bool DialogueController::update(u32 keys) {
                 optionCount   = current->selections.size();
                 doRenderOptions = (optionCount > 0);
             }
-            return true; // Still animating, don't process input yet
+
+            return; // still animating, don't process input yet
         }
     }
 
-    // --- Step 2: Render options if needed ---
+    // render options if needed
     if (doRenderOptions) {
         renderOptions();
         doRenderOptions = false;
     }
 
-    // --- Step 3: Handle exit ---
+    // handle exit
     if (keys & KEY_START) {
         bgHide(current->imageId);
         consoleClear();
         active = false;
-        return false;
+        return;
     }
 
-    // --- Step 4: Handle input ---
+    // handle input
     if (optionCount > 0) {
-        // Selection dialogue
+        // selection dialogue
         if (pressed & KEY_DOWN) {
             selectedOption = (selectedOption + 1) % optionCount;
             doRenderOptions = true;
@@ -80,9 +80,15 @@ bool DialogueController::update(u32 keys) {
             animIndex      = 0;
             animDone       = false;
             consoleClear();
+
+            // check if we've run out of dialogue
+            if (current == NULL) {
+                active = false;
+                return;
+            }
         }
     } else {
-        // Linear dialogue
+        // linear dialogue (no selection)
         if (pressed & KEY_A) {
             bgHide(current->imageId);
             current     = current->next;
@@ -90,6 +96,12 @@ bool DialogueController::update(u32 keys) {
             animIndex   = 0;
             animDone    = false;
             consoleClear();
+
+            // check if we've run out of dialogue
+            if (current == NULL) {
+                active = false;
+                return;
+            }
         } else if (pressed & KEY_B) {
             bgHide(current->imageId);
             current     = current->prev;
@@ -97,17 +109,14 @@ bool DialogueController::update(u32 keys) {
             animIndex   = 0;
             animDone    = false;
             consoleClear();
+            
+            // check if we've run out of dialogue
+            if (current == NULL) {
+                active = false;
+                return;
+            }
         }
     }
-
-    // Check if we've run out of dialogue
-    if (current == nullptr) {
-        active = false;
-        consoleClear();
-        return false;
-    }
-
-    return true;
 }
 
 void DialogueController::renderOptions() {

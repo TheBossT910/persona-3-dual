@@ -6,9 +6,6 @@
 #include <string.h>
 #include "MusicController.h"
 
-// -------------------------------------------------------------------
-// Internal state — file-scoped, not exposed in the header
-// -------------------------------------------------------------------
 #define FILE_READ_CHUNK  (4 * 1024)
 #define STREAM_BUF_SIZE  (8 * 1024)
 
@@ -27,9 +24,7 @@ static s16 leftoverBuffer[MAX_SAMPLES_PER_FRAME * 2];
 static int leftoverCount = 0;
 static int leftoverIndex = 0;
 
-// -------------------------------------------------------------------
-// Internal helpers
-// -------------------------------------------------------------------
+// internal helpers
 static inline s16 fixedToS16(mad_fixed_t sample) {
     if (sample >= MAD_F_ONE)  return 32767;
     if (sample <= -MAD_F_ONE) return -32768;
@@ -93,9 +88,7 @@ static void restartMp3() {
     mad_stream_buffer(&madStream, s_streamBuf, bytesRead);
 }
 
-// -------------------------------------------------------------------
-// Maxmod stream callback
-// -------------------------------------------------------------------
+// maxmod stream callback
 static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_formats format) {
     s16* output = (s16*)dest;
     mm_word samples_filled = 0;
@@ -158,9 +151,6 @@ static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_forma
     return length;
 }
 
-// -------------------------------------------------------------------
-// MusicController implementation
-// -------------------------------------------------------------------
 MusicController::MusicController() {}
 
 int MusicController::probeFirstFrame() {
@@ -192,7 +182,7 @@ void MusicController::init(const char* filePath) {
     int sampleRate = probeFirstFrame();
     if (sampleRate < 0) { iprintf("MusicController: decode error\n"); return; }
 
-    // Reset leftover tracking — discard the probe frame's audio
+    // reset leftover tracking (discard the probe frame's audio)
     leftoverCount = 0;
     leftoverIndex = 0;
 

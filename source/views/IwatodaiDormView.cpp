@@ -16,10 +16,6 @@
 // 2D
 #include "akihiko.h"
 
-// sub screen
-int bgAkihiko;
-PrintConsole console;
-
 // texture ID
 static int environmentTextureId;
 static int characterTextureId;
@@ -34,30 +30,6 @@ void DrawPlayerModel() {
     // bind texture before drawing
     glBindTexture(GL_TEXTURE_2D, characterTextureId);
     glCallList((u32*)character_bin);
-}
-
-void InteractionController(TileType tileType, u32 inputKeys) {
-    switch(tileType) {
-        case TileType::NEXT_SCENE:
-            iprintf("\x1b[0;0HNext scene zone");
-            break;
-        case TileType::PREV_SCENE:
-            iprintf("\x1b[0;0HPrev scene zone");
-            break;
-        case TileType::CHARACTER_Akihiko:
-            iprintf("\x1b[0;0HPress A to talk");
-            if (inputKeys & KEY_A) {
-                // delay between input and controller
-                for (int i = 0; i < 6; i++) {
-                    swiWaitForVBlank();
-                }
-                // dialogueCtrl->dialogueDemo(bgAkihiko);
-            }
-            break;
-        default:
-            consoleClear();
-            bgHide(bgAkihiko);
-    }
 }
 
 void IwatodaiDormView::Init() {
@@ -138,17 +110,19 @@ void IwatodaiDormView::Init() {
     // get controllers
     playerCtrl = new CharacterController(MAP_WIDTH, MAP_HEIGHT, &collision_map[0][0], tileSize, worldOffsetX, worldOffsetZ, characterRadius, speed, angleIncrement, distance, lookAhead, angle, translateX, translateZ, characterFacingAngle);
     
-    // dialogueCtrl
-    // Build dialogue graph once — pointers stay valid since members live in the View
+    // build dialogue graph for dialogueCtrl
     lines[0] = { "Akihiko", "text line 1", bgAkihiko, NULL, &lines[1], {} };
     lines[1] = { "Akihiko", "text line 2", bgAkihiko, &lines[0], &lines[2], {} };
 
-    dialogue selection_1_dia = { "Akihiko", "selection 1", bgAkihiko, &lines[2], NULL, {} };
-    dialogue selection_2_dia = { "Akihiko", "selection 2", bgAkihiko, &lines[2], NULL, {} };
-    dialogueSelection sel1 = { "Go home",         false, &selection_1_dia };
-    dialogueSelection sel2 = { "Go for a walk",   false, &selection_2_dia };
+    lines[3] = { "Akihiko", "selection 1", bgAkihiko, &lines[2], NULL, {} };
+    lines[4] = { "Akihiko", "selection 2", bgAkihiko, &lines[2], NULL, {} };
+
+    dialogueSelection sel1 = { "Go home",         false, &lines[3] };
+    dialogueSelection sel2 = { "Go for a walk",   false, &lines[4] };
+    
     lines[2] = { "Akihiko", "line 3, sel", bgAkihiko, &lines[1], NULL, { sel1, sel2 } };
 
+    // point to music
     musicCtrl.init("nitro:/music/song.mp3");
 }
 
@@ -159,21 +133,22 @@ ViewState IwatodaiDormView::Update() {
 
     scanKeys();
     u32 keys = keysHeld();
+    u32 pressed = keysDown();
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
-    cameraPosition camPos;
-
-    // Only process world input when dialogue is not active
+    // only process world input when dialogue is not active
     if (!dialogueCtrl.isActive()) {
-        // control character
+        // move character
         camPos = playerCtrl->update(keys);
 
-        // Trigger dialogue from interaction
+        // trigger dialogue from interaction
         if (playerCtrl->isTileAt() == TileType::CHARACTER_Akihiko) {
             iprintf("\x1b[0;0HPress A to talk");
-            if (keysDown() & KEY_A) {
+            if (pressed & KEY_A) {
                 dialogueCtrl.start(&lines[0]);
             }
+        } else {
+            consoleClear();
         }
     }
 
@@ -198,17 +173,16 @@ ViewState IwatodaiDormView::Update() {
 
     glFlush(0);
 
-    InteractionController(playerCtrl->isTileAt(), keys);
-
     // print coordinates (64x64 area from 0,0 to 64,64)
-    iprintf("\x1b[10;0Htile(x,z): %d, %d",
+    iprintf("\x1b[21;0Htile(x,z): %d, %d",
         (int)((charPos.x + worldOffsetX) / tileSize),
         (int)((charPos.z + worldOffsetZ) / tileSize));
-    iprintf("\x1b[11;0Htranslate(x,z): %d, %d",
+    iprintf("\x1b[22;0Htranslate(x,z): %d, %d",
         (int)(charPos.x * 100),
         (int)(charPos.z * 100));
-    iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
+    iprintf("\x1b[23;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
 
+    // update controllers
     dialogueCtrl.update(keys);
     musicCtrl.update();
 
@@ -234,5 +208,7 @@ void IwatodaiDormView::Cleanup() {
     glDeleteTextures(1, &characterTextureId);
 
     // cleanup controllers
+    delete playerCtrl;
+    playerCtrl = NULL;
     musicCtrl.cleanup();
 }

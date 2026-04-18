@@ -22,13 +22,8 @@ struct dialogue {
 class DialogueController {
     public:
         DialogueController();
-
-        // Call to begin a dialogue sequence
         void start(dialogue* firstLine);
-
-        // Call every frame in your View's Update(), returns true while dialogue is active
-        bool update(u32 keys);
-
+        void update(u32 keys);
         bool isActive() const { return active; }
 
     private:
@@ -42,7 +37,7 @@ class DialogueController {
         bool      isDisplayed     = false;
         bool      doRenderOptions = false;
 
-        // For text animation
+        // for text animation
         int    animIndex    = 0;
         int    animWait     = 0;
         bool   animDone     = false;

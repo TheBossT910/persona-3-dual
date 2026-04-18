@@ -150,17 +150,8 @@ ViewState MainMenuView::Update() {
         }
         return ViewState::IWATODAI_DORM;
     } else if (sceneOptions[1].selected) {
-        // selected "Music"
-        for(int i = 0; i > -16; i--) {
-            setBrightness(3, i);
-            for (int duration = 0; duration <= 2; duration++) {
-                swiWaitForVBlank();
-            }
-        }
-        return ViewState::MUSIC;
-    } else if (sceneOptions[2].selected) {
         // select menuOptions
-        sceneOptions[2].selected = false;
+        sceneOptions[1].selected = false;
         selectedOption = 0;
         options = menuOptions;
         optionCount = menuOptionCount;

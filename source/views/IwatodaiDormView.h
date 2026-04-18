@@ -7,8 +7,20 @@
 // implementing from View
 class IwatodaiDormView : public View {
     public:
+        // override tells compiler we intend to override a virtual fn in a base class (i.e. View)
+        void Init() override;
+        ViewState Update() override;
+        void Cleanup() override;
+
+    private:
+        // sub screen
+        int bgAkihiko;
+        PrintConsole console;
+
         // controllers
         CharacterController* playerCtrl;
+            // camera pos
+            cameraPosition camPos;
             // world
             const float tileSize = 0.0625f;
             const float worldOffsetX = 1.8125f;
@@ -26,13 +38,5 @@ class IwatodaiDormView : public View {
             const float characterFacingAngle = 91.67;
         MusicController musicCtrl;
         DialogueController dialogueCtrl;
-            // Dialogue lines live here so they persist across frames
-            dialogue lines[3];
-            dialogue selection_1_dia;
-            dialogue selection_2_dia;
-
-        // override tells compiler we intend to override a virtual fn in a base class (i.e. View)
-        void Init() override;
-        ViewState Update() override;
-        void Cleanup() override;
+            dialogue lines[5];
 };
