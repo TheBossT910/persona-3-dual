@@ -80,3 +80,6 @@ iprintf("\x1b[12;0Htile: %d, %d      ",
 ```
 
 Walking from one edge of the world to the other should show tiles going from `0` to `(tile count - 1)`. If the numbers are inverted or offset, the collision map orientation may need adjusting in convert_map.py (see flip/rotate options).
+
+## Compress MP3 to DS format
+ffmpeg -i input.mp3 -ar 22050 -ac 1 -q:a 4 output.mp3

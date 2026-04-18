@@ -135,6 +135,9 @@ void IntroView::Init() {
 	bgSetScroll(bg[0], -silhouetteX, -silhouetteY);
 	bgUpdate();
 
+    // point to music
+    musicCtrl.init("nitro:/music/tightrope.mp3");
+
     // hide sub screen text and attribution text layer
     REG_BLDCNT_SUB = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_SRC_BG0 | BLEND_DST_BG0 | BLEND_DST_BG1 | BLEND_DST_BACKDROP;
     REG_BLDALPHA_SUB = 0 | (16 << 8);
@@ -150,21 +153,24 @@ void IntroView::Init() {
 	
 		// wait for duration amount of frames
 		for (int frame = 0; frame <= 6; frame++) {
+            musicCtrl.update();
 			swiWaitForVBlank();
 		}
 	}
 }
 
 ViewState IntroView::Update() {
+    musicCtrl.update();
     scanKeys();
     int keys = keysDown();
 
     // transition to menu state on any input
     if (keys) {
+        musicCtrl.pause();
         // transition both screens to white
         for(int i = 0; i <= 16; i++) {
             setBrightness(3, i);
-        
+
             // wait a few frames
             for (int duration = 0; duration <= 2; duration++) {
                 swiWaitForVBlank();
@@ -337,4 +343,7 @@ void IntroView::Cleanup() {
     REG_BLDCNT_SUB = 0;
     REG_BLDALPHA = 0;
     REG_BLDALPHA_SUB = 0;
+
+    // cleanup controllers
+    musicCtrl.cleanup();
 }

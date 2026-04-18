@@ -154,15 +154,33 @@ static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_forma
 MusicController::MusicController() {}
 
 int MusicController::probeFirstFrame() {
-    while (mad_frame_decode(&madFrame, &madStream) != 0) {
-        if (madStream.error == MAD_ERROR_BUFLEN) {
-            if (!refillStreamBuffer()) return -1;
-            continue;
+    int sampleRate = 0;
+    int confirmedRate = 0;
+    int confirmCount = 0;
+
+    // decode until we see the same sample rate 3 times in a row
+    // this skips VBR/Xing header frames which often report wrong rates
+    while (confirmCount < 3) {
+        while (mad_frame_decode(&madFrame, &madStream) != 0) {
+            if (madStream.error == MAD_ERROR_BUFLEN) {
+                if (!refillStreamBuffer()) break;
+                continue;
+            }
+            if (!MAD_RECOVERABLE(madStream.error)) break;
         }
-        if (!MAD_RECOVERABLE(madStream.error)) return -1;
+        mad_synth_frame(&madSynth, &madFrame);
+        int detectedRate = madSynth.pcm.samplerate;
+
+        if (detectedRate == confirmedRate) {
+            confirmCount++;
+        } else {
+            confirmedRate = detectedRate;
+            confirmCount = 1;
+        }
     }
-    mad_synth_frame(&madSynth, &madFrame);
-    return madSynth.pcm.samplerate;
+    sampleRate = confirmedRate;
+    // iprintf("Confirmed sample rate: %d Hz\n", sampleRate);
+    return sampleRate;
 }
 
 void MusicController::init(const char* filePath) {
