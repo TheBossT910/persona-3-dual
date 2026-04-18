@@ -24,8 +24,6 @@ PrintConsole console;
 static int environmentTextureId;
 static int characterTextureId;
 
-DialogueController* dialogueCtrl;
-
 void DrawEnvironmentModel() {
     // bind texture before drawing
     glBindTexture(GL_TEXTURE_2D, environmentTextureId);
@@ -53,7 +51,7 @@ void InteractionController(TileType tileType, u32 inputKeys) {
                 for (int i = 0; i < 6; i++) {
                     swiWaitForVBlank();
                 }
-                dialogueCtrl->dialogueDemo(bgAkihiko);
+                // dialogueCtrl->dialogueDemo(bgAkihiko);
             }
             break;
         default:
@@ -139,8 +137,19 @@ void IwatodaiDormView::Init() {
 
     // get controllers
     playerCtrl = new CharacterController(MAP_WIDTH, MAP_HEIGHT, &collision_map[0][0], tileSize, worldOffsetX, worldOffsetZ, characterRadius, speed, angleIncrement, distance, lookAhead, angle, translateX, translateZ, characterFacingAngle);
-    dialogueCtrl = new DialogueController();
-    music.init("nitro:/music/song.mp3");
+    
+    // dialogueCtrl
+    // Build dialogue graph once — pointers stay valid since members live in the View
+    lines[0] = { "Akihiko", "text line 1", bgAkihiko, NULL, &lines[1], {} };
+    lines[1] = { "Akihiko", "text line 2", bgAkihiko, &lines[0], &lines[2], {} };
+
+    dialogue selection_1_dia = { "Akihiko", "selection 1", bgAkihiko, &lines[2], NULL, {} };
+    dialogue selection_2_dia = { "Akihiko", "selection 2", bgAkihiko, &lines[2], NULL, {} };
+    dialogueSelection sel1 = { "Go home",         false, &selection_1_dia };
+    dialogueSelection sel2 = { "Go for a walk",   false, &selection_2_dia };
+    lines[2] = { "Akihiko", "line 3, sel", bgAkihiko, &lines[1], NULL, { sel1, sel2 } };
+
+    musicCtrl.init("nitro:/music/song.mp3");
 }
 
 ViewState IwatodaiDormView::Update() {
@@ -152,11 +161,26 @@ ViewState IwatodaiDormView::Update() {
     u32 keys = keysHeld();
     if(keys & KEY_START) return ViewState::MAIN_MENU;
 
-    // control character
-    cameraPosition camPos = playerCtrl->update(keys);
+    cameraPosition camPos;
+
+    // Only process world input when dialogue is not active
+    if (!dialogueCtrl.isActive()) {
+        // control character
+        camPos = playerCtrl->update(keys);
+
+        // Trigger dialogue from interaction
+        if (playerCtrl->isTileAt() == TileType::CHARACTER_Akihiko) {
+            iprintf("\x1b[0;0HPress A to talk");
+            if (keysDown() & KEY_A) {
+                dialogueCtrl.start(&lines[0]);
+            }
+        }
+    }
+
+    // update camera position
     gluLookAt(camPos.cameraX, camPos.cameraY, camPos.cameraZ,
-              camPos.targetX, camPos.targetY, camPos.targetZ,
-              camPos.upX, camPos.upY, camPos.upZ);
+        camPos.targetX, camPos.targetY, camPos.targetZ,
+        camPos.upX, camPos.upY, camPos.upZ);
 
     // draw environment
     glPushMatrix();
@@ -185,7 +209,8 @@ ViewState IwatodaiDormView::Update() {
         (int)(charPos.z * 100));
     iprintf("\x1b[12;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
 
-    music.update();
+    dialogueCtrl.update(keys);
+    musicCtrl.update();
 
     return ViewState::KEEP_CURRENT;
 }
@@ -209,5 +234,5 @@ void IwatodaiDormView::Cleanup() {
     glDeleteTextures(1, &characterTextureId);
 
     // cleanup controllers
-    music.cleanup();
+    musicCtrl.cleanup();
 }

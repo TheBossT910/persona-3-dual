@@ -24,8 +24,13 @@ class IwatodaiDormView : public View {
             const float translateZ = -0.8;
             const float angle = -1.6;
             const float characterFacingAngle = 91.67;
-        MusicController music;
-        
+        MusicController musicCtrl;
+        DialogueController dialogueCtrl;
+            // Dialogue lines live here so they persist across frames
+            dialogue lines[3];
+            dialogue selection_1_dia;
+            dialogue selection_2_dia;
+
         // override tells compiler we intend to override a virtual fn in a base class (i.e. View)
         void Init() override;
         ViewState Update() override;

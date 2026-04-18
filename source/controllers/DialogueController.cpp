@@ -4,107 +4,118 @@
 
 DialogueController::DialogueController() {}
 
-void DialogueController::update() {}
-
-void DialogueController::dialogueDemo(int demoImageId) {
-    // setup dialogue (3 lines)
-    dialogue lines[3] = {};
-    lines[0] = { "Akihiko", "text line 1", demoImageId, NULL, &lines[1], {} };
-    lines[1] = { "Akihiko", "text line 2", demoImageId, &lines[0], &lines[2], {} };
-
-    // selection example
-    dialogue selection_1_dia = { "Akihiko", "selection 1", demoImageId, &lines[2], NULL, {} };
-    dialogue selection_2_dia = { "Akihiko", "selection 2", demoImageId, &lines[2], NULL, {} };
-    dialogueSelection selection_1 = { "Go home", false, &selection_1_dia };
-    dialogueSelection selection_2 = { "Go for a walk", false, &selection_2_dia };
-
-    lines[2] = { "Akihiko", "line 3, sel", demoImageId, &lines[1], NULL, { selection_1, selection_2 } };
-
-    // pointer to the currently displayed dialogue
-    dialogue* currentDialogue = &lines[0];   
-    int optionCount = 0;
-    int selectedOption = 0;
-    bool isDisplayed = false;
-    bool doRenderOptions = false;
-
+void DialogueController::start(dialogue* firstLine) {
+    current        = firstLine;
+    optionCount    = 0;
+    selectedOption = 0;
+    active         = true;
+    isDisplayed    = false;
+    doRenderOptions= false;
+    animIndex      = 0;
+    animWait       = 0;
+    animDone       = false;
+    prevKeys       = 0;
     consoleClear();
-    while (true) {
-        // display data
-        if (!isDisplayed) {
-            bgShow(currentDialogue->imageId);
-            animateText(currentDialogue->text);
-            
-            isDisplayed = true;
-            optionCount = currentDialogue->selections.size();
-            if (optionCount) {
-                doRenderOptions = true;
+}
+
+// Returns true while dialogue is still running, false when it finishes
+bool DialogueController::update(u32 keys) {
+    if (!active || current == nullptr) {
+        active = false;
+        return false;
+    }
+
+    // Fresh key presses only, ignore held keys
+    u32 pressed = keys & ~prevKeys;
+    prevKeys = keys;
+
+    // --- Step 1: Show the dialogue line (animate text) ---
+    if (!isDisplayed) {
+        bgShow(current->imageId);
+
+        // Animate one character per frame
+        if (!animDone) {
+            if (animIndex <= (int)current->text.length()) {
+                iprintf("\x1b[12;16H%s \n",
+                    current->text.substr(0, animIndex).c_str());
+                animIndex++;
+            } else {
+                animDone = true;
+                isDisplayed   = true;
+                optionCount   = current->selections.size();
+                doRenderOptions = (optionCount > 0);
             }
+            return true; // Still animating, don't process input yet
         }
+    }
 
-        // display options
-        if (doRenderOptions) {
-            consoleClear();
-            iprintf("\x1b[12;16H%s\n", currentDialogue->text.c_str());
+    // --- Step 2: Render options if needed ---
+    if (doRenderOptions) {
+        renderOptions();
+        doRenderOptions = false;
+    }
 
-            for (int option = 0; option < optionCount; option++) {
-                iprintf("%c %s\n", option == selectedOption ? '>' : ' ', currentDialogue->selections[option].text.c_str());
-            }
+    // --- Step 3: Handle exit ---
+    if (keys & KEY_START) {
+        bgHide(current->imageId);
+        consoleClear();
+        active = false;
+        return false;
+    }
 
-            doRenderOptions = false;
-        }
-        
-        scanKeys();
-        u32 keys = keysHeld();
-
-        // clear data
-        if ((keys & KEY_A) || (keys & KEY_B)) {
-            consoleClear();
-            bgHide(currentDialogue->imageId);
-            isDisplayed = false;
-            doRenderOptions = false;            
-        }
-        
-        // user control
-        if (optionCount && (keys & KEY_DOWN)) {
-            // select next option
+    // --- Step 4: Handle input ---
+    if (optionCount > 0) {
+        // Selection dialogue
+        if (pressed & KEY_DOWN) {
             selectedOption = (selectedOption + 1) % optionCount;
             doRenderOptions = true;
-        } else if (optionCount && (keys & KEY_UP)) {
-            // select previous option
+        } else if (pressed & KEY_UP) {
             selectedOption = (selectedOption + optionCount - 1) % optionCount;
             doRenderOptions = true;
-        } else if (optionCount && (keys & KEY_A)) {
-            // go to next selection dialogue
-            currentDialogue = currentDialogue->selections[selectedOption].next;
+        } else if (pressed & KEY_A) {
+            bgHide(current->imageId);
+            current        = current->selections[selectedOption].next;
             selectedOption = 0;
-        } else if (!optionCount && (keys & KEY_A)) {
-            // go to next dialogue
-            currentDialogue = currentDialogue->next;
-        } else if (keys & KEY_B) {
-            // go to previous dialogue
-            currentDialogue = currentDialogue->prev;
-        } 
-
-        // exit function
-        if ((currentDialogue == NULL) || (keys & KEY_START)) {
-            delay();
-            return;
+            isDisplayed    = false;
+            animIndex      = 0;
+            animDone       = false;
+            consoleClear();
         }
-
-        delay();
+    } else {
+        // Linear dialogue
+        if (pressed & KEY_A) {
+            bgHide(current->imageId);
+            current     = current->next;
+            isDisplayed = false;
+            animIndex   = 0;
+            animDone    = false;
+            consoleClear();
+        } else if (pressed & KEY_B) {
+            bgHide(current->imageId);
+            current     = current->prev;
+            isDisplayed = false;
+            animIndex   = 0;
+            animDone    = false;
+            consoleClear();
+        }
     }
+
+    // Check if we've run out of dialogue
+    if (current == nullptr) {
+        active = false;
+        consoleClear();
+        return false;
+    }
+
+    return true;
 }
 
-void DialogueController::animateText(string text) {
-    int size = text.length();
-    for (int i = 0; i <= size; i++) {
-        swiWaitForVBlank();
-        iprintf("\x1b[12;16H%s\n", text.substr(0, i).c_str());
-    }
-}
-
-void DialogueController::delay() {
-    for (int i = 0; i < 6; i++) {
-        swiWaitForVBlank();
+void DialogueController::renderOptions() {
+    consoleClear();
+    iprintf("\x1b[12;16H%s\n", current->text.c_str());
+    for (int i = 0; i < optionCount; i++) {
+        iprintf("%c %s\n",
+            i == selectedOption ? '>' : ' ',
+            current->selections[i].text.c_str());
     }
 }
