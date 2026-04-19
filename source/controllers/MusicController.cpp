@@ -241,6 +241,22 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
     s_mp3File = fopen(filePath, "rb");
     if (!s_mp3File) { iprintf("MusicController: failed to open %s\n", filePath); return; }
 
+    // identify and skip the ID3v2 tag
+    long audioStartOffset = 0;
+    unsigned char id3Header[10];
+    
+    // read first 10 bytes to check for ID3 tag
+    if (fread(id3Header, 1, 10, s_mp3File) == 10) {
+        if (id3Header[0] == 'I' && id3Header[1] == 'D' && id3Header[2] == '3') {
+            // ID3v2 size is stored as a 28-bit sync-safe integer
+            int id3Size = (id3Header[6] << 21) | (id3Header[7] << 14) | (id3Header[8] << 7) | id3Header[9];
+            audioStartOffset = id3Size + 10; // total size includes the 10-byte header
+        }
+    }
+    
+    // seek to the actual start of the audio data
+    fseek(s_mp3File, audioStartOffset, SEEK_SET);
+
     s_streamBuf = (unsigned char*)malloc(STREAM_BUF_SIZE);
     if (!s_streamBuf) { iprintf("MusicController: out of memory\n"); fclose(s_mp3File); return; }
 
@@ -250,17 +266,17 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
     int sampleRate = probeFirstFrame();
     if (sampleRate < 0) { iprintf("MusicController: decode error\n"); return; }
 
-    // Find and store the loop point
+    // find and store the loop point
     if (loopStartSeconds > 0.0f) {
-        s_loopStartSeconds = loopStartSeconds;  // e.g. 18.0f
+        s_loopStartSeconds = loopStartSeconds;
         s_loopStartOffset  = findOffsetAtTime(loopStartSeconds);
     } else {
         s_loopStartSeconds = 0.0f;
-        s_loopStartOffset  = 0;
+        s_loopStartOffset  = audioStartOffset;
     }
 
-    // Reset to beginning for actual playback (intro plays from 0)
-    fseek(s_mp3File, 0, SEEK_SET);
+    // reset to beginning of audio for actual playback
+    fseek(s_mp3File, audioStartOffset, SEEK_SET);
     s_fileEOF    = false;
     s_guardAdded = false;
     madReinit();
@@ -269,12 +285,6 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
     // reset leftover tracking (discard the probe frame's audio)
     leftoverCount = 0;
     leftoverIndex = 0;
-
-    mm_ds_system sys;
-    sys.mod_count  = 0;
-    sys.samp_count = 0;
-    sys.mem_bank   = 0;
-    mmInit(&sys);
 
     mm_stream stream;
     stream.timer         = MM_TIMER0;
@@ -285,6 +295,8 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
     stream.manual        = true;
     mmStreamOpen(&stream);
     s_streamOpen = true;
+
+    mmStreamUpdate();
 }
 
 void MusicController::update() {

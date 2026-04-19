@@ -1,6 +1,7 @@
 #include <nds.h>
 #include <stdio.h>
 #include <filesystem.h>
+#include <maxmod9.h>
 
 // states
 #include "core/View.h"
@@ -45,6 +46,13 @@ int main(int argc, char *argv[]) {
         consoleDemoInit();
         iprintf("NitroFS Failed! ARGV is broken.\n");
     }
+
+    // Initialize Maxmod ONCE here
+    mm_ds_system sys;
+    sys.mod_count  = 0;
+    sys.samp_count = 0;
+    sys.mem_bank   = 0;
+    mmInit(&sys);
 
     // start with IntroView
     // SwitchView(new IntroView());
