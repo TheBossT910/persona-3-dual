@@ -8,7 +8,11 @@
 #include "views/MainMenuView.h"
 #include "views/IwatodaiDormView.h"
 
+// controllers
+#include "controllers/MusicController.h"
+
 volatile int frame = 0;
+MusicController musicCtrl;
 View* currentView = nullptr;
 
 void SwitchView(View* newView) {

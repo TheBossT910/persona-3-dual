@@ -210,5 +210,4 @@ void IwatodaiDormView::Cleanup() {
     // cleanup controllers
     delete playerCtrl;
     playerCtrl = NULL;
-    musicCtrl.cleanup();
 }

@@ -343,7 +343,4 @@ void IntroView::Cleanup() {
     REG_BLDCNT_SUB = 0;
     REG_BLDALPHA = 0;
     REG_BLDALPHA_SUB = 0;
-
-    // cleanup controllers
-    musicCtrl.cleanup();
 }

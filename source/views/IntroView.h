@@ -1,5 +1,6 @@
 #pragma once
 #include "core/View.h"
+#include "core/globals.h"
 #include "controllers/MusicController.h"
 
 //a simple sprite structure
@@ -17,9 +18,6 @@ typedef struct
 // implementing from View
 class IntroView : public View {
     private:
-        // controllers
-        MusicController musicCtrl;
-
         Sprite logoSprite[2];
         int bg[4];
         touchPosition touchXY;

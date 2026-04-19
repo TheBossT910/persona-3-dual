@@ -14,6 +14,7 @@ static unsigned char* s_streamBuf      = nullptr;
 static bool           s_fileEOF        = false;
 static bool           s_guardAdded     = false;
 static bool           s_pendingRestart = false;
+static bool           s_streamOpen     = false;
 
 static struct mad_stream madStream;
 static struct mad_frame  madFrame;
@@ -227,6 +228,9 @@ int MusicController::probeFirstFrame() {
 }
 
 void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, float loopEndSeconds = -1.0f) {
+    // cleanup any existing audio stream
+    cleanup();
+
     s_loopEndSeconds  = loopEndSeconds;
     s_elapsedSeconds  = 0.0f;
 
@@ -280,6 +284,7 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
     stream.format        = MM_STREAM_16BIT_STEREO;
     stream.manual        = true;
     mmStreamOpen(&stream);
+    s_streamOpen = true;
 }
 
 void MusicController::update() {
@@ -287,15 +292,22 @@ void MusicController::update() {
 }
 
 void MusicController::cleanup() {
-    mmStreamClose();
+    if (s_streamOpen) {
+        mmStreamClose();
+        s_streamOpen = false;
+    }
 
     mad_synth_finish(&madSynth);
     mad_frame_finish(&madFrame);
     mad_stream_finish(&madStream);
 
-    free(s_streamBuf);  s_streamBuf = nullptr;
-    fclose(s_mp3File);  s_mp3File   = nullptr;
+    if (s_streamBuf) { free(s_streamBuf);  s_streamBuf = nullptr; }
+    if (s_mp3File) { fclose(s_mp3File);  s_mp3File   = nullptr; }
 }
 
-void MusicController::pause()  { mmStreamClose(); }
-void MusicController::resume() { /* re-open stream if needed */ }
+void MusicController::pause()  {
+    if (s_streamOpen) {
+        mmStreamClose();
+        s_streamOpen = false;
+    }
+}

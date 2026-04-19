@@ -174,7 +174,6 @@ ViewState MainMenuView::Update() {
     // scroll silhouette background
     // animate X (moving right towards 0)
     if (silhouetteX < 0 && frame % 5 == 0) {
-        // musicCtrl.update();
         silhouetteX += (-silhouetteX) / 6 + 1;
         if (silhouetteX > 0) silhouetteX = 0;
     }
@@ -242,7 +241,4 @@ void MainMenuView::Cleanup() {
     // disable blending
     REG_BLDCNT = 0;
     REG_BLDALPHA = 0;
-
-    // cleanup controllers
-    musicCtrl.cleanup();
 }
