@@ -32,16 +32,14 @@ void Vblank() {
 	frame++;
 }
 	
-int main(void) {
+int main(int argc, char *argv[]) {
 	irqSet(IRQ_VBLANK, Vblank);
-
-	// debug init
-	consoleDemoInit();
 
     // load NitroFS
     if (!nitroFSInit(NULL)) {
-        iprintf("NitroFS init failed!\n");
-        while(1) swiWaitForVBlank();
+        // debug init
+        consoleDemoInit();
+        iprintf("NitroFS Failed! ARGV is broken.\n");
     }
 
     // start with IntroView
