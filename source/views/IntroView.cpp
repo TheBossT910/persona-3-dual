@@ -37,8 +37,8 @@ void IntroView::Init() {
 	bgExtPaletteEnable();
     bgExtPaletteEnableSub();
 
-	// set brightness on bottom screen to completely dark (no visible image)
-	setBrightness(2, -16);
+	// set brightness on both screen to completely dark (no visible image)
+	setBrightness(3, -16);
 
 	// initialize backgrounds
 	// check https://mtheall.com/vram.html to ensure bg fit in vram
@@ -142,9 +142,22 @@ void IntroView::Init() {
     REG_BLDCNT_SUB = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_SRC_BG0 | BLEND_DST_BG0 | BLEND_DST_BG1 | BLEND_DST_BACKDROP;
     REG_BLDALPHA_SUB = 0 | (16 << 8);
 
-	// fade skyBackground in
+    // hide main skyBackground
 	// blend control. takes effect mode / source / destination
 	REG_BLDCNT = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_DST_BACKDROP;
+
+    // fade top screen in
+    for(int i = 0; i <= 16; i++) {
+        setBrightness(1, -16 + i);
+	
+		// wait for duration amount of frames
+		for (int frame = 0; frame <= 3; frame++) {
+            musicCtrl.update();
+			swiWaitForVBlank();
+		}
+	}
+
+    // fade skyBackgrounds in
 	for(int i = 0; i <= 16; i++) {
 		// source opacity / dest opacity. They should add up to 16
 		REG_BLDALPHA = i | ((16 - i) << 8);
