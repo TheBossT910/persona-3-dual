@@ -83,3 +83,16 @@ Walking from one edge of the world to the other should show tiles going from `0`
 
 ## Compress MP3 to DS format
 ffmpeg -i input.mp3 -ar 22050 -ac 1 -q:a 4 output.mp3
+
+---
+
+# Add Videos
+First, get your desired video in MP4 format. Then, you want to convert it using the below command
+
+#### Convert MP4 to .raw (24fps, no audio)
+ffmpeg -i input.mp4 -an -vcodec rawvideo -f rawvideo -pix_fmt bgr555le -s 256x192 -r 24 output.raw
+
+Then, you want to run the following Python script to modify the converted file
+
+#### Flip Alpha bit on converted DS video
+python3 ds_video_prep.py video_24fps.raw intro_ds.raw

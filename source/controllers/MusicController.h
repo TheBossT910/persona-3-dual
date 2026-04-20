@@ -7,6 +7,7 @@ class MusicController {
         void init(const char* filePath, float loopStartSeconds, float loopEndSeconds);
         void update();
         void pause();
+        float getTime();
 
     private:
         void cleanup();

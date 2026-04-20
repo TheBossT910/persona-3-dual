@@ -330,3 +330,5 @@ void MusicController::pause()  {
         s_streamOpen = false;
     }
 }
+
+float MusicController::getTime() { return s_elapsedSeconds; }
