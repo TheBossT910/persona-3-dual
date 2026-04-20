@@ -4,10 +4,10 @@
 enum class ViewState {
     KEEP_CURRENT,
     DISCLAIMER,
+    INTRO_VIDEO,
     INTRO,
     MAIN_MENU,
     IWATODAI_DORM,
-    VIDEO
 };
 
 class View {

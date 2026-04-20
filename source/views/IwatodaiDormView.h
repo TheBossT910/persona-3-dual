@@ -2,7 +2,6 @@
 #include "core/View.h"
 #include "controllers/DialogueController.h"
 #include "controllers/CharacterController.h"
-#include "controllers/MusicController.h"
 
 // implementing from View
 class IwatodaiDormView : public View {

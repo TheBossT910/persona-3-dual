@@ -1,7 +1,6 @@
 #pragma once
 #include "core/View.h"
 #include "core/globals.h"
-#include "controllers/MusicController.h"
 
 //a simple sprite structure
 typedef struct

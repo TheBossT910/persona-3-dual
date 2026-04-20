@@ -6,16 +6,18 @@
 // states
 #include "core/View.h"
 #include "views/DisclaimerView.h"
+#include "views/IntroVideoView.h"
 #include "views/IntroView.h"
 #include "views/MainMenuView.h"
 #include "views/IwatodaiDormView.h"
-#include "views/VideoView.h"
 
 // controllers
 #include "controllers/MusicController.h"
+#include "controllers/VideoController.h"
 
 volatile int frame = 0;
 MusicController musicCtrl;
+VideoController videoCtrl;
 View* currentView = nullptr;
 
 void SwitchView(View* newView) {
@@ -49,15 +51,15 @@ int main(int argc, char *argv[]) {
         iprintf("NitroFS Failed! ARGV is broken.\n");
     }
 
-    // Initialize Maxmod ONCE here
+    // initialize maxmod (for audio)
     mm_ds_system sys;
     sys.mod_count  = 0;
     sys.samp_count = 0;
     sys.mem_bank   = 0;
     mmInit(&sys);
 
-    // start with IntroView
-    // SwitchView(new IntroView());
+    // start with DisclaimerView
+    // SwitchView(new DisclaimerView());
 
     // DEBUG
     SwitchView(new DisclaimerView());
@@ -76,8 +78,8 @@ int main(int argc, char *argv[]) {
                 SwitchView(new IwatodaiDormView());
             } else if (nextState == ViewState::DISCLAIMER) {
                 SwitchView(new DisclaimerView());
-            } else if (nextState == ViewState::VIDEO) {
-                SwitchView(new VideoView());
+            } else if (nextState == ViewState::INTRO_VIDEO) {
+                SwitchView(new IntroVideoView());
             }
         }
 

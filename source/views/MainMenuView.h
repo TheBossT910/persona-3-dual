@@ -1,6 +1,5 @@
 #pragma once
 #include "core/View.h"
-#include "controllers/MusicController.h"
 
 typedef struct
 {

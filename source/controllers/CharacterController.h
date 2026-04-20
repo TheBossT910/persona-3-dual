@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 
 // TODO: move this to globals?

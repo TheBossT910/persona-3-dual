@@ -1,17 +1,15 @@
 #include <nds.h>
 #include <stdio.h>
 #include "core/globals.h"
-#include "VideoView.h"
+#include "VideoController.h"
 
-# define FRAME_SIZE (256 * 192 * 2)
+void VideoController::init(string iFileName, ViewState iNextState, bool iIsSkippable) {
+    // set variables
+    nextState = iNextState;
+    isSkippable = iIsSkippable;
+    string musicPath = "nitro:/video/" + iFileName + ".mp3";
+    string videoPath = "nitro:/video/" + iFileName + ".raw";
 
-FILE* videoFile;
-u16* ramBuffer;
-int pulldownState;
-int currentFrame;
-int bg;
-
-void VideoView::Init() {
     // set video mode for 2 text layers and 2 extended rotation layer
 	videoSetMode(MODE_5_2D);
 	// set sub video mode for 4 text layers
@@ -31,13 +29,13 @@ void VideoView::Init() {
     bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0); 
 
     // point to music
-    musicCtrl.init("nitro:/video/intro.mp3", 0.0f, -1.0f);
+    musicCtrl.init(musicPath.c_str(), 0.0f, -1.0f);
 
     // open file and allocate memory
-    videoFile = fopen("nitro:/video/intro.raw", "rb");
+    videoFile = fopen(videoPath.c_str(), "rb");
     if (videoFile == NULL) {
         consoleDemoInit();
-        iprintf("ERROR: video_24fps.raw not found!\nCheck nitroFSInit() and path.");
+        iprintf(videoPath.c_str());
         while(1) swiWaitForVBlank();
     }
 
@@ -48,14 +46,14 @@ void VideoView::Init() {
     fread(ramBuffer, 1, FRAME_SIZE, videoFile);
 }
 
-ViewState VideoView::Update() {
+ViewState VideoController::update() {
     musicCtrl.update();
 
     scanKeys();
     int keys = keysDown();
 
     // transition to intro on any input
-    if (keys) {
+    if (isSkippable && keys) {
         musicCtrl.pause();
         // transition both screens to black
         for(int i = 0; i <= 16; i++) {
@@ -66,7 +64,7 @@ ViewState VideoView::Update() {
                 swiWaitForVBlank();
             }
         }
-        return ViewState::INTRO;
+        return nextState;
     }
 
     // check where the video should be right now
@@ -82,7 +80,7 @@ ViewState VideoView::Update() {
     // are we severely behind the audio? (drop a frame to catch up)
     // if the SD card lagged and we are more than 1 frame behind, skip rendering.
     if (currentFrame < expectedFrame - 1) {
-        // Skip reading 98KB, just jump the file pointer forward
+        // skip reading 98KB, just jump the file pointer forward
         fseek(videoFile, FRAME_SIZE, SEEK_CUR);
         currentFrame++;
         return ViewState::KEEP_CURRENT; 
@@ -94,14 +92,14 @@ ViewState VideoView::Update() {
     
     // read the next frame immediately
     size_t bytesRead = fread(ramBuffer, 1, FRAME_SIZE, videoFile);
-    if (bytesRead < FRAME_SIZE) return ViewState::INTRO; // EOF
+    if (bytesRead < FRAME_SIZE) return nextState; // EOF
     
     currentFrame++;
 
     return ViewState::KEEP_CURRENT;
 }
 
-void VideoView::Cleanup() {
+void VideoController::cleanup() {
     // clear screen
     setBrightness(3, 0);
     consoleClear();
