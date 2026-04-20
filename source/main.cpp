@@ -9,6 +9,7 @@
 #include "views/IntroView.h"
 #include "views/MainMenuView.h"
 #include "views/IwatodaiDormView.h"
+#include "views/VideoView.h"
 
 // controllers
 #include "controllers/MusicController.h"
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
     // SwitchView(new IntroView());
 
     // DEBUG
-    SwitchView(new DisclaimerView());
+    SwitchView(new VideoView());
 
 	while(pmMainLoop()) {
 		swiWaitForVBlank();
@@ -75,6 +76,8 @@ int main(int argc, char *argv[]) {
                 SwitchView(new IwatodaiDormView());
             } else if (nextState == ViewState::DISCLAIMER) {
                 SwitchView(new DisclaimerView());
+            } else if (nextState == ViewState::VIDEO) {
+                SwitchView(new VideoView());
             }
         }
 

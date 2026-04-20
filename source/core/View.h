@@ -6,7 +6,8 @@ enum class ViewState {
     DISCLAIMER,
     INTRO,
     MAIN_MENU,
-    IWATODAI_DORM
+    IWATODAI_DORM,
+    VIDEO
 };
 
 class View {
