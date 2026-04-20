@@ -25,9 +25,9 @@ GRAPHICS	:=	graphics
 SFX       	:=  sfx
 NITRODATA   :=  nitrofiles
 
-GAME_TITLE	   := Persona 3 DS
-GAME_SUBTITLE1 := Memento Mori
-GAME_SUBTITLE2 := A Fan Recreation
+GAME_TITLE	   := Persona 3 Dual
+GAME_SUBTITLE1 := A Fan Recreation
+GAME_SUBTITLE2 := Demake by Taha Rashid
 export GAME_ICON := $(CURDIR)/../icon.bmp
 
 #---------------------------------------------------------------------------------
