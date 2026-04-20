@@ -5,6 +5,7 @@
 
 // states
 #include "core/View.h"
+#include "views/DisclaimerView.h"
 #include "views/IntroView.h"
 #include "views/MainMenuView.h"
 #include "views/IwatodaiDormView.h"
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
     // SwitchView(new IntroView());
 
     // DEBUG
-    SwitchView(new IntroView());
+    SwitchView(new DisclaimerView());
 
 	while(pmMainLoop()) {
 		swiWaitForVBlank();
@@ -72,6 +73,8 @@ int main(int argc, char *argv[]) {
                 SwitchView(new MainMenuView());
             } else if (nextState == ViewState::IWATODAI_DORM) {
                 SwitchView(new IwatodaiDormView());
+            } else if (nextState == ViewState::DISCLAIMER) {
+                SwitchView(new DisclaimerView());
             }
         }
 

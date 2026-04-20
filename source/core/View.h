@@ -3,6 +3,7 @@
 // enum to tell which ViewState to use
 enum class ViewState {
     KEEP_CURRENT,
+    DISCLAIMER,
     INTRO,
     MAIN_MENU,
     IWATODAI_DORM
