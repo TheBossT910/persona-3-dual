@@ -5,7 +5,7 @@
 
 
 void IntroVideoView::Init() {
-    videoCtrl.init("intro", 30.0f, ViewState::INTRO, true);
+    videoCtrl.init("intro", 24.0f, ViewState::INTRO, true);
 }
 
 ViewState IntroVideoView::Update() {
