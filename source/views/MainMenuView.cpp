@@ -10,7 +10,7 @@
 
 void MainMenuView::Init() {
     // point to music
-    musicCtrl.init("nitro:/music/aria_of_the_soul.mp3", 0.0f, -1.0f);
+    musicCtrl.init("nitro:/music/aria_of_the_soul.mp3", 0.0f, 164.940f);
 
     // transition both screens from white
     for(int i = 16; i > 0; i--) {
