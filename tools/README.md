@@ -11,13 +11,13 @@ obj2dl.py *input* *output* --texsize *w* *h*
 python3 /Users/taharashid/Desktop/obj2bin.py /Users/taharashid/Desktop/Personal/Coding/nds_dev/models/iwatodai_dorm/iwatodai_dorm.obj uv.bin --texsize 256 256
 
 ## convert_map
-convert_map.py *input* *output* [x y width height]
+texture2collision.py *input* *output* [x y width height]
 - Converts a Blockbench texture PNG to a DS collision map C header file
 - Each pixel in the texture corresponds to one tile
 - Optionally crop a region of the texture using x, y, width, height
 *This tool was AI generated*
 
-python3 convert_map.py /Users/taharashid/Desktop/texture.png output.h 0 0 64 64
+python3 texture2collision.py /Users/taharashid/Desktop/texture.png output.h 0 0 64 64
 
 ---
 Activate .venv
@@ -95,4 +95,5 @@ ffmpeg -i input.mp4 -an -vcodec rawvideo -f rawvideo -pix_fmt bgr555le -s 256x19
 Then, you want to run the following Python script to modify the converted file
 
 #### Flip Alpha bit on converted DS video
-python3 ds_video_prep.py video_24fps.raw intro_ds.raw
+python3 videoPrep.py video_24fps.raw intro_ds.raw
+*This tool was AI generated*
