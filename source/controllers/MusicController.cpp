@@ -95,7 +95,7 @@ static void restartMp3() {
     mad_stream_buffer(&madStream, s_streamBuf, bytesRead);
 }
 
-// Decode and discard frames until we reach the target time,
+// decode and discard frames until we reach the target time,
 // then snapshot the file position as the loop point
 static long findOffsetAtTime(float targetSeconds) {
     float elapsed = 0.0f;
@@ -116,9 +116,9 @@ static long findOffsetAtTime(float targetSeconds) {
         elapsed += frameDuration;
     }
 
-    // Snapshot where we are in the file right now
+    // snapshot where we are in the file right now
     // next_frame points to the start of the next unread frame in the buffer
-    // We calculate its actual file position from how much buffer is ahead of it
+    // we calculate its actual file position from how much buffer is ahead of it
     size_t bufferAhead = madStream.bufend - madStream.next_frame;
     long filePos = ftell(s_mp3File) - (long)bufferAhead;
     return filePos;
@@ -227,42 +227,55 @@ int MusicController::probeFirstFrame() {
     return sampleRate;
 }
 
+// ID3 parsing logic
+long MusicController::getAudioStartOffset(FILE* file) {
+    if (!file) return 0;
+    
+    unsigned char id3Header[10];
+    if (fread(id3Header, 1, 10, file) == 10) {
+        if (id3Header[0] == 'I' && id3Header[1] == 'D' && id3Header[2] == '3') {
+            // ID3v2 size is stored as a 28-bit sync-safe integer
+            int id3Size = (id3Header[6] << 21) | (id3Header[7] << 14) | (id3Header[8] << 7) | id3Header[9];
+            return id3Size + 10;
+        }
+    }
+    return 0; // no ID3v2 tag found, start at 0
+}
+
+void MusicController::resetStreamToOffset(long offset) {
+    fseek(s_mp3File, offset, SEEK_SET);
+    s_fileEOF    = false;
+    s_guardAdded = false;
+    
+    madReinit();
+    refillStreamBuffer();
+    
+    // reset leftover tracking (discard any previous frame's audio)
+    leftoverCount = 0;
+    leftoverIndex = 0;
+}
+
 void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, float loopEndSeconds = -1.0f) {
-    // cleanup any existing audio stream
+    // cleanup any previous audio streams
     cleanup();
 
-    s_loopEndSeconds  = loopEndSeconds;
-    s_elapsedSeconds  = 0.0f;
-
+    s_loopEndSeconds = loopEndSeconds;
+    s_elapsedSeconds = 0.0f;
     s_pendingRestart = false;
-    s_fileEOF        = false;
-    s_guardAdded     = false;
 
     s_mp3File = fopen(filePath, "rb");
     if (!s_mp3File) { iprintf("MusicController: failed to open %s\n", filePath); return; }
 
-    // identify and skip the ID3v2 tag
-    long audioStartOffset = 0;
-    unsigned char id3Header[10];
-    
-    // read first 10 bytes to check for ID3 tag
-    if (fread(id3Header, 1, 10, s_mp3File) == 10) {
-        if (id3Header[0] == 'I' && id3Header[1] == 'D' && id3Header[2] == '3') {
-            // ID3v2 size is stored as a 28-bit sync-safe integer
-            int id3Size = (id3Header[6] << 21) | (id3Header[7] << 14) | (id3Header[8] << 7) | id3Header[9];
-            audioStartOffset = id3Size + 10; // total size includes the 10-byte header
-        }
-    }
-    
-    // seek to the actual start of the audio data
-    fseek(s_mp3File, audioStartOffset, SEEK_SET);
-
     s_streamBuf = (unsigned char*)malloc(STREAM_BUF_SIZE);
     if (!s_streamBuf) { iprintf("MusicController: out of memory\n"); fclose(s_mp3File); return; }
 
-    madReinit();
-    refillStreamBuffer();
+    // find where the real audio starts
+    long audioStartOffset = getAudioStartOffset(s_mp3File);
 
+    // prep the stream to read the first frame
+    resetStreamToOffset(audioStartOffset);
+
+    // probe to get the sample rate
     int sampleRate = probeFirstFrame();
     if (sampleRate < 0) { iprintf("MusicController: decode error\n"); return; }
 
@@ -275,17 +288,10 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
         s_loopStartOffset  = audioStartOffset;
     }
 
-    // reset to beginning of audio for actual playback
-    fseek(s_mp3File, audioStartOffset, SEEK_SET);
-    s_fileEOF    = false;
-    s_guardAdded = false;
-    madReinit();
-    refillStreamBuffer();
+    // reset stream back to the beginning for actual playback
+    resetStreamToOffset(audioStartOffset);
 
-    // reset leftover tracking (discard the probe frame's audio)
-    leftoverCount = 0;
-    leftoverIndex = 0;
-
+    // start Maxmod
     mm_stream stream;
     stream.timer         = MM_TIMER0;
     stream.sampling_rate = sampleRate;
@@ -296,6 +302,7 @@ void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, 
     mmStreamOpen(&stream);
     s_streamOpen = true;
 
+    // fill stream
     mmStreamUpdate();
 }
 

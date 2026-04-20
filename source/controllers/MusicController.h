@@ -11,4 +11,6 @@ class MusicController {
     private:
         void cleanup();
         int  probeFirstFrame(); // returns sample rate  
+        long getAudioStartOffset(FILE* file);
+        void resetStreamToOffset(long offset);
 };
