@@ -3,9 +3,10 @@
 #include "core/globals.h"
 #include "VideoController.h"
 
-void VideoController::init(string iFileName, ViewState iNextState, bool iIsSkippable) {
+void VideoController::init(string iFileName, float iFps, ViewState iNextState, bool iIsSkippable) {
     // set variables
     nextState = iNextState;
+    fps = iFps;
     isSkippable = iIsSkippable;
     string musicPath = "nitro:/video/" + iFileName + ".mp3";
     string videoPath = "nitro:/video/" + iFileName + ".raw";
@@ -68,8 +69,8 @@ ViewState VideoController::update() {
     }
 
     // check where the video should be right now
-    // 24 frames per second * current audio time
-    int expectedFrame = (int)(musicCtrl.getTime() * 24.0f);
+    // frames per second * current audio time
+    int expectedFrame = (int)(musicCtrl.getTime() * fps);
 
     // are we ahead of the audio? Just wait and don't draw.
     if (currentFrame > expectedFrame) {

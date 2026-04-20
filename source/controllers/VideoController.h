@@ -11,13 +11,14 @@ using namespace std;
 class VideoController {    
     public:
         VideoController() {};
-        void init(string iFileName, ViewState iNextState, bool iIsSkippable);
+        void init(string iFileName, float iFps, ViewState iNextState, bool iIsSkippable);
         ViewState update();
         void cleanup();
     
     private:
         ViewState nextState;
         bool isSkippable;
+        float fps;
 
         FILE* videoFile;
         u16* ramBuffer;
