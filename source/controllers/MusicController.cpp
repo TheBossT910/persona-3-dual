@@ -172,7 +172,7 @@ static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_forma
         int  decoded_samples = madSynth.pcm.length;
         bool isStereo        = (madSynth.pcm.channels == 2);
 
-        // Track elapsed time — one frame's worth per decode
+        // track elapsed time (one frame's worth per decode)
         s_elapsedSeconds += (float)decoded_samples / (float)madSynth.pcm.samplerate;
 
         leftoverIndex = 0;
@@ -332,3 +332,25 @@ void MusicController::pause()  {
 }
 
 float MusicController::getTime() { return s_elapsedSeconds; }
+
+void MusicController::loadSFX(mm_word effectID) {
+    mmLoadEffect(effectID);
+}
+
+mm_sfxhand MusicController::playSFX(mm_word effectID, int volume, int panning) {
+    mm_sound_effect effect;
+    
+    effect.id      = effectID;              // the id from the soundbank header (e.g., SFX_BOOM)
+    effect.rate    = (int)(1.0f * (1<<10)); // 1.0x playback rate (1024)
+    effect.handle  = 0;                     // 0 = auto-allocate a channel
+    effect.volume  = volume;                // 0-255
+    effect.panning = panning;               // 0 (left) to 255 (right)
+    
+    return mmEffectEx(&effect);
+}
+
+void MusicController::stopSFX(mm_sfxhand handle) {
+    if (handle != 0) {
+        mmEffectCancel(handle);
+    }
+}

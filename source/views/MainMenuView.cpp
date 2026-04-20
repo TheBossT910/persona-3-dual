@@ -7,9 +7,24 @@
 #include "menuSilhouetteBackground.h"
 #include "doorBackground.h"
 #include "fogBackground.h"
+// sfx
+#include "soundbank.h"
+
+mm_sfxhand sfxMenuHandle;
+mm_sfxhand sfxSelectHandle;
+mm_sfxhand sfxCancelHandle;
+
+void cancelSFX() {
+    musicCtrl.stopSFX(sfxMenuHandle);
+    musicCtrl.stopSFX(sfxSelectHandle);
+    musicCtrl.stopSFX(sfxCancelHandle);
+}
 
 void MainMenuView::Init() {
     // point to music
+    musicCtrl.loadSFX(SFX_MENU);
+    musicCtrl.loadSFX(SFX_SELECT);
+    musicCtrl.loadSFX(SFX_CANCEL);
     musicCtrl.init("nitro:/music/aria_of_the_soul.mp3", 0.0f, 164.940f);
 
     // transition both screens from white
@@ -113,31 +128,41 @@ ViewState MainMenuView::Update() {
 
     // display option text
     if (keys & KEY_DOWN) {
+        sfxMenuHandle = musicCtrl.playSFX(SFX_MENU, 255, 128);
         selectedOption = (selectedOption + 1) % optionCount;
     }
 
     if (keys & KEY_UP) {
+        sfxMenuHandle = musicCtrl.playSFX(SFX_MENU, 255, 128);
         selectedOption = (selectedOption + optionCount - 1) % optionCount;
     }
 
     if (keys & KEY_A) {
+        sfxSelectHandle = musicCtrl.playSFX(SFX_SELECT, 255, 128);
         options[selectedOption].selected = true;
     }
 
     if (keys & KEY_B) {
+        sfxCancelHandle = musicCtrl.playSFX(SFX_CANCEL, 255, 128);
         options[selectedOption].selected = false;
     }
 
     consoleClear();
     // choosing which options to display
     if (menuOptions[0].selected) {
+        cancelSFX();
+        musicCtrl.playSFX(SFX_SELECT, 255, 128);
+
         // select sceneOptions
         menuOptions[0].selected = false;
         selectedOption = 0;
         options = sceneOptions;
         optionCount = sceneOptionCount;
     } else if (menuOptions[1].selected) {
+        cancelSFX();
+        musicCtrl.playSFX(SFX_CANCEL, 255, 128);
         musicCtrl.pause();
+
         // selected "Return to Title"
         for(int i = 0; i > -16; i--) {
             setBrightness(3, i);
@@ -147,7 +172,10 @@ ViewState MainMenuView::Update() {
         }
         return ViewState::INTRO;
     } else if (sceneOptions[0].selected) {
+        cancelSFX();
+        musicCtrl.playSFX(SFX_SELECT, 255, 128);
         musicCtrl.pause();
+        
         // selected "Iwatodai Dorm"
         for(int i = 0; i > -16; i--) {
             setBrightness(3, i);
@@ -157,6 +185,9 @@ ViewState MainMenuView::Update() {
         }
         return ViewState::IWATODAI_DORM;
     } else if (sceneOptions[1].selected) {
+        cancelSFX();
+        musicCtrl.playSFX(SFX_CANCEL, 255, 128);
+
         // select menuOptions
         sceneOptions[1].selected = false;
         selectedOption = 0;

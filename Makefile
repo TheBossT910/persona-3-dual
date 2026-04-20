@@ -22,6 +22,7 @@ SOURCES		:=	source source/views source/controllers source/core
 DATA		:=	data
 INCLUDES	:=	include source
 GRAPHICS	:=	graphics
+SFX       	:=  sfx
 NITRODATA   :=  nitrofiles
 
 GAME_TITLE	   := Persona 3 DS
@@ -78,8 +79,10 @@ endif
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*))) soundbank.bin
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
+
+export SFXFILES	:=	$(foreach dir,$(notdir $(wildcard $(SFX)/*.*)),$(CURDIR)/$(SFX)/$(dir))
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -130,6 +133,13 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT).nds	: 	$(OUTPUT).elf
 $(OUTPUT).nds   :   $(shell find $(TOPDIR)/$(NITRODATA))
 $(OUTPUT).elf	:	$(OFILES)
+
+#---------------------------------------------------------------------------------
+# rule to build soundbank from music files
+#---------------------------------------------------------------------------------
+soundbank.bin soundbank.h : $(SFXFILES)
+#---------------------------------------------------------------------------------
+	@mmutil $^ -d -osoundbank.bin -hsoundbank.h
 
 #---------------------------------------------------------------------------------
 %.bin.o	:	%.bin

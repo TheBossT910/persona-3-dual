@@ -1,5 +1,6 @@
 #include <nds.h>
 #include <stdio.h>
+#include <maxmod9.h>
 #include "core/globals.h"
 #include "IntroView.h"
 
@@ -13,6 +14,8 @@
 // sub screen
 #include "attributionBackground.h"
 #include "skyBackgroundSub.h"
+// sfx
+#include "soundbank.h"
 
 // sub screen
 int bgSubLogo;
@@ -136,6 +139,7 @@ void IntroView::Init() {
 	bgUpdate();
 
     // point to music
+    musicCtrl.loadSFX(SFX_SELECT);
     musicCtrl.init("nitro:/music/tightrope.mp3", 17.962f, 66.082f);
 
     // hide sub screen text and attribution text layer
@@ -179,6 +183,7 @@ ViewState IntroView::Update() {
 
     // transition to menu state on any input
     if (keys) {
+        musicCtrl.playSFX(SFX_SELECT, 255, 128); 
         musicCtrl.pause();
         // transition both screens to white
         for(int i = 0; i <= 16; i++) {

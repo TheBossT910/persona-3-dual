@@ -15,6 +15,9 @@
 #include "controllers/MusicController.h"
 #include "controllers/VideoController.h"
 
+// sfx
+#include "soundbank_bin.h"
+
 volatile int frame = 0;
 MusicController musicCtrl;
 VideoController videoCtrl;
@@ -46,9 +49,8 @@ int main(int argc, char *argv[]) {
 
     // load NitroFS
     if (!nitroFSInit(NULL)) {
-        // debug init
         consoleDemoInit();
-        iprintf("NitroFS Failed! ARGV is broken.\n");
+        iprintf("NitroFS failed!\n");
     }
 
     // initialize maxmod (for audio)
@@ -57,6 +59,9 @@ int main(int argc, char *argv[]) {
     sys.samp_count = 0;
     sys.mem_bank   = 0;
     mmInit(&sys);
+
+    // initialize maxmod (for sfx)
+    mmInitDefaultMem((mm_addr)soundbank_bin);
 
     // start with DisclaimerView
     // SwitchView(new DisclaimerView());
