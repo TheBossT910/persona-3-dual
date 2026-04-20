@@ -35,7 +35,8 @@ Iwatodai Dorm (WIP)
 - **Collision & Interaction System** — Tile-based 2D collision map overlaid on the 3D world. Zones are typed (wall, save point, scene transition, NPC trigger) to drive interactivity like zone loading and character encounters.
 - **Dialogue Controller** — Fully-featured dialogue system with character-by-character text animation, per-line character portraits, branching dialogue trees with d-pad navigation, and scrollable history. Dialogue is authored in plain header files.
 - **Decoupled Controller Architecture** — Character movement, camera, and dialogue are each in separate files, making the codebase modular and easy to extend.
-- **Audio** — MP3 playback via a ported `nds-libmad` library. NitroFS streaming is planned to reduce RAM usage.
+- **Audio** — MP3 playback via a ported `nds-libmad` library, streaming audio in via NitroFS. Also supports SFX
+- **Video** - Video playback via streaming in frames, paired with the audio solution above to stitch together a full video with audio. Uses NitroFS.
 - **Custom Tooling** — Python utilities built alongside the engine: `obj2bin.py` converts Wavefront OBJ files (with UV data) to DS display list binaries; a Blockbench texture → header file converter is also included. A Markdown → dialogue header generator is planned.
 - **Hand-modelled Assets** — 10+ low-poly environment models built in Blockbench: receptionist desk, dining table, chairs (2 variants), wardrobe, side table, lamps, TV, and doors.
 
@@ -64,7 +65,7 @@ Iwatodai Dorm (WIP)
 - [x] Character model + movement controls
 - [x] Collision + interaction detection
 - [x] Dialogue system
-- [ ] Music/SFX playback (-> In progress!)
+- [x] Music/SFX playback
 - [ ] Combat system
 - [ ] Iwatodai Dorm — fully detailed environment
 - [ ] Additional scenes (world map, school room, Tartarus)
