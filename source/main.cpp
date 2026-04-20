@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     // SwitchView(new IntroView());
 
     // DEBUG
-    SwitchView(new VideoView());
+    SwitchView(new DisclaimerView());
 
 	while(pmMainLoop()) {
 		swiWaitForVBlank();

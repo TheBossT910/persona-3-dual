@@ -90,8 +90,8 @@ void DisclaimerView::Init() {
 }
 
 ViewState DisclaimerView::Update() {
-    // transition to IntroView
-    return ViewState::INTRO;
+    // transition to VideoView
+    return ViewState::VIDEO;
 }
 
 void DisclaimerView::Cleanup() {
