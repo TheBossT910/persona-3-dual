@@ -32,7 +32,7 @@ void VideoController::init(string iFileName, float iFps, ViewState iNextState, b
     // point to music
     musicCtrl.init(musicPath.c_str(), 0.0f, -1.0f);
 
-    // open file and allocate memory
+    // open video file file
     videoFile = fopen(videoPath.c_str(), "rb");
     if (videoFile == NULL) {
         consoleDemoInit();
