@@ -1,4 +1,3 @@
-// VideoController.cpp
 #include <nds.h>
 #include <stdio.h>
 #include <malloc.h>
@@ -12,15 +11,14 @@ void VideoController::init(string iFileName, float iFps,
     isSkippable  = iIsSkippable;
     fileEOF      = false;
 
-    string musicPath = "nitro:/video/" + iFileName + ".pcm";
-    string videoPath = "nitro:/video/" + iFileName + ".raw";
+    // Use single interweaved file
+    string videoPath = "nitro:/video/" + iFileName + ".vid";
 
-    readIndex      = 0;
-    writeIndex     = 0;
+    readIndex       = 0;
+    writeIndex      = 0;
     framesAvailable = 0;
-    currentFrame   = 0;
+    currentFrame    = 0;
 
-    // ── Video mode ───────────────────────────────────────────────────────────
     videoSetMode(MODE_5_2D | DISPLAY_BG3_ACTIVE);
     videoSetModeSub(MODE_0_2D);
 
@@ -28,19 +26,16 @@ void VideoController::init(string iFileName, float iFps,
     vramSetBankD(VRAM_D_MAIN_BG_0x06020000);
     vramSetBankC(VRAM_C_SUB_BG);
 
-    // ── Background ───────────────────────────────────────────────────────────
 #if BYTES_PER_PX == 1
-    // 8bpp bitmap background — uses standard BG_PALETTE, not extended palettes
     bg = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
 #else
     bgExtPaletteEnable();
     bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
 #endif
 
-    // ── Audio ────────────────────────────────────────────────────────────────
-    musicCtrl.init(musicPath.c_str(), 0.0f, 0.0f);
+    // Initialize the ring buffer for video audio
+    musicCtrl.initVideoAudio();
 
-    // ── File ─────────────────────────────────────────────────────────────────
     videoFile = fopen(videoPath.c_str(), "rb");
     if (!videoFile) {
         consoleDemoInit();
@@ -48,16 +43,12 @@ void VideoController::init(string iFileName, float iFps,
         while (1) swiWaitForVBlank();
     }
 
-    // ── Palette (8bpp only) ──────────────────────────────────────────────────
-    // The .raw file starts with a 512-byte palette header (256 × BGR555 u16).
-    // Read it once and load it into the main engine BG_PALETTE before any
-    // frames are drawn. BgType_Bmp8 reads from BG_PALETTE, not ext palettes.
 #if BYTES_PER_PX == 1
     u16 palette[256];
     size_t palRead = fread(palette, 2, 256, videoFile);
     if (palRead != 256) {
         consoleDemoInit();
-        iprintf("ERR: palette read failed (%d/256)", (int)palRead);
+        iprintf("ERR: palette read failed");
         while (1) swiWaitForVBlank();
     }
     
@@ -66,8 +57,6 @@ void VideoController::init(string iFileName, float iFps,
     }
 #endif
 
-    // ── RAM buffer ───────────────────────────────────────────────────────────
-    // memalign guarantees 32-byte alignment required for DMA
     ramBuffer = (u8*)memalign(32, BUFFER_SIZE);
     if (!ramBuffer) {
         consoleDemoInit();
@@ -75,20 +64,32 @@ void VideoController::init(string iFileName, float iFps,
         while (1) swiWaitForVBlank();
     }
 
-    // Pre-fill both slots before playback starts
     refillBuffer();
     refillBuffer();
 }
 
-// ── Internal: read one frame into the next write slot ────────────────────────
 void VideoController::refillBuffer() {
     if (fileEOF || framesAvailable >= FRAMES_TO_BUFFER) return;
 
+    u32 audioSize = 0;
+    
+    // Read audio chunk size
+    if (fread(&audioSize, 4, 1, videoFile) != 1) {
+        fileEOF = true;
+        return;
+    }
+
+    // Read audio data and push to ring buffer immediately
+    if (audioSize > 0) {
+        fread(audioBuf, 1, audioSize, videoFile);
+        musicCtrl.pushVideoAudio(audioBuf, audioSize);
+    }
+
+    // Read video frame
     u8* dest = &ramBuffer[writeIndex * FRAME_SIZE];
     size_t bytes = fread(dest, 1, FRAME_SIZE, videoFile);
 
     if (bytes == FRAME_SIZE) {
-        // Flush data cache so DMA sees fresh data (critical on ARM9 hardware)
         DC_FlushRange(dest, FRAME_SIZE);
         writeIndex = (writeIndex + 1) % FRAMES_TO_BUFFER;
         framesAvailable++;
@@ -97,13 +98,11 @@ void VideoController::refillBuffer() {
     }
 }
 
-// ── Main update — called once per game loop iteration ────────────────────────
 ViewState VideoController::update() {
     musicCtrl.update();
     scanKeys();
     int keys = keysDown();
 
-    // ── Skip input ───────────────────────────────────────────────────────────
     if (isSkippable && keys) {
         musicCtrl.pause();
         for (int i = 0; i <= 16; i++) {
@@ -114,21 +113,18 @@ ViewState VideoController::update() {
         return nextState;
     }
 
-    // ── Refill buffer BEFORE sync — use VBlank wait time productively ────────
     for (int r = 0; r < READS_PER_UPDATE; r++) {
         refillBuffer();
     }
 
-    // ── Sync check ───────────────────────────────────────────────────────────
-    int expectedFrame = (int)(musicCtrl.getTime() * fps);
+    // Use getVideoTime() instead of getTime()
+    int expectedFrame = (int)(musicCtrl.getVideoTime() * fps);
 
-    // Ahead of audio — wait one VBlank, don't draw
     if (currentFrame > expectedFrame && !fileEOF) {
         swiWaitForVBlank();
         return ViewState::KEEP_CURRENT;
     }
 
-    // Behind audio — drop frames to catch up (max 3 at once)
     int dropBudget = 3;
     while (currentFrame < expectedFrame - 1 && framesAvailable > 0 && dropBudget-- > 0) {
         readIndex = (readIndex + 1) % FRAMES_TO_BUFFER;
@@ -136,12 +132,10 @@ ViewState VideoController::update() {
         currentFrame++;
     }
 
-    // ── End of file with buffer drained ──────────────────────────────────────
     if (fileEOF && framesAvailable == 0) {
         return nextState;
     }
 
-    // ── Draw frame ───────────────────────────────────────────────────────────
     if (framesAvailable > 0) {
         swiWaitForVBlank();
         dmaCopy(
@@ -157,7 +151,6 @@ ViewState VideoController::update() {
     return ViewState::KEEP_CURRENT;
 }
 
-// ── Cleanup ──────────────────────────────────────────────────────────────────
 void VideoController::cleanup() {
     setBrightness(3, 0);
     consoleClear();
@@ -168,4 +161,7 @@ void VideoController::cleanup() {
 
     fclose(videoFile);
     free(ramBuffer);
+    
+    // MusicController cleanup handles the ring buffer memory
+    musicCtrl.cleanup();
 }

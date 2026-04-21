@@ -2,7 +2,6 @@
 #include <maxmod9.h>
 #include <stdio.h>
 
-// We will use standard 32kHz 16-bit Stereo audio.
 #define AUDIO_SAMPLE_RATE 32000
 #define AUDIO_CHANNELS 2
 #define BYTES_PER_SAMPLE 2
@@ -16,6 +15,12 @@ class MusicController {
         void pause();
         void resume();
         float getTime();
+
+        // --- NEW VIDEO AUDIO METHODS ---
+        void initVideoAudio();
+        void pushVideoAudio(const u8* data, size_t size);
+        float getVideoTime();
+        // -------------------------------
 
         void loadSFX(mm_word effectID);
         mm_sfxhand playSFX(mm_word effectID, int volume = 255, int panning = 128);
