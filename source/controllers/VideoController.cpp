@@ -33,6 +33,9 @@ void VideoController::init(string iFileName, float iFps,
     bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
 #endif
 
+    // clear memory
+    dmaFillWords(0, bgGetGfxPtr(bg), FRAME_SIZE);
+
     // initialize the ring buffer for video audio
     musicCtrl.initVideoAudio();
 
