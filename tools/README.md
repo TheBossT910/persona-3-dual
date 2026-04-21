@@ -1,16 +1,29 @@
-## obj2dl
-obj2dl.py *input* *output*
-- Converts a .obj file to display list commands
+## Activate .venv
+
+python3 -m venv ~/.venv
+source ~/.venv/bin/activate
+
+---
+
+## Convert MP3 to .pcm (NDS format)
+ffmpeg -i input.mp3 -f s16le -ar 32000 -ac 2 output.pcm
+
+---
+
+# video2vid - Convert videos to .vid (NDS format) - 
+python3 video2vid.py input.mp4 output --bits 8 --fps 15
 *This tool was AI generated*
 
-## obj2bin
+---
+
+## obj2bin - Convert 3D models into .bin display list data (NDS format)
 obj2dl.py *input* *output* --texsize *w* *h*
 - Converts a .obj file to .bin
 *This tool was AI generated*
 
 python3 /Users/taharashid/Desktop/obj2bin.py /Users/taharashid/Desktop/Personal/Coding/nds_dev/models/iwatodai_dorm/iwatodai_dorm.obj uv.bin --texsize 256 256
 
-## convert_map
+## convert_map - - Convert a 2D collision texture into .h collision data (NDS format)
 texture2collision.py *input* *output* [x y width height]
 - Converts a Blockbench texture PNG to a DS collision map C header file
 - Each pixel in the texture corresponds to one tile
@@ -19,11 +32,6 @@ texture2collision.py *input* *output* [x y width height]
 
 python3 texture2collision.py /Users/taharashid/Desktop/texture.png output.h 0 0 64 64
 
----
-Activate .venv
-
-python3 -m venv ~/.venv
-source ~/.venv/bin/activate
 ---
 
 ## Figuring Out World Offset and Tile Size
@@ -73,30 +81,14 @@ The tile count is the pixel resolution of your painted collision map (e.g. 64 if
 Add this debug print and walk around:
 
 ```c
-iprintf("\x1b[11;0Hpos: %.2f, %.2f   ", translateX, translateZ);
-iprintf("\x1b[12;0Htile: %d, %d      ",
-    (int)((translateX + WORLD_OFFSET_X) / TILE_SIZE),
-    (int)((translateZ + WORLD_OFFSET_Z) / TILE_SIZE));
+// print coordinates (64x64 area from 0,0 to 64,64)
+    iprintf("\x1b[21;0Htile(x,z): %d, %d",
+        (int)((charPos.x + worldOffsetX) / tileSize),
+        (int)((charPos.z + worldOffsetZ) / tileSize));
+    iprintf("\x1b[22;0Htranslate(x,z): %d, %d",
+        (int)(charPos.x * 100),
+        (int)(charPos.z * 100));
+    iprintf("\x1b[23;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
 ```
 
 Walking from one edge of the world to the other should show tiles going from `0` to `(tile count - 1)`. If the numbers are inverted or offset, the collision map orientation may need adjusting in convert_map.py (see flip/rotate options).
-
-## Compress MP3 to DS format (deprecated)
-ffmpeg -i input.mp3 -ar 22050 -ac 1 -q:a 4 output.mp3
-
-## Compress MP3 to PCM (for DS)
-ffmpeg -i input.mp3 -f s16le -ar 32000 -ac 2 output.pcm
-
----
-
-# Add Videos
-First, get your desired video in MP4 format. Then, you want to convert it using the below command
-
-#### Convert MP4 to .raw (24fps, no audio)
-ffmpeg -i input.mp4 -an -vcodec rawvideo -f rawvideo -pix_fmt bgr555le -s 256x192 -r 24 output.raw
-
-Then, you want to run the following Python script to modify the converted file
-
-#### Flip Alpha bit on converted DS video
-python3 videoPrep.py video_24fps.raw intro_ds.raw
-*This tool was AI generated*
