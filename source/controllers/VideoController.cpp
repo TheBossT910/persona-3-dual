@@ -157,10 +157,15 @@ void VideoController::cleanup() {
     setBrightness(3, 0);
     consoleClear();
 
+    // clear vram
     vramSetBankA(VRAM_A_LCD);
     vramSetBankC(VRAM_C_LCD);
     vramSetBankD(VRAM_D_LCD);
 
+    // clear memory
+    dmaFillWords(0, bgGetGfxPtr(bg), FRAME_SIZE);
+
+    // free resources
     fclose(videoFile);
     free(ramBuffer);
     
