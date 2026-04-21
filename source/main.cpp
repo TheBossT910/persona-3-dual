@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     // SwitchView(new DisclaimerView());
 
     // DEBUG
-    SwitchView(new IntroVideoView());
+    SwitchView(new DisclaimerView());
 
 	while(pmMainLoop()) {
 		swiWaitForVBlank();

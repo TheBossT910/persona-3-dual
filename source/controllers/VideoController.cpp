@@ -36,7 +36,7 @@ void VideoController::init(string iFileName, float iFps, ViewState iNextState, b
     bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0); 
 
     // point to music
-    musicCtrl.init(musicPath.c_str(), 0.0f, -1.0f);
+    musicCtrl.init(musicPath.c_str(), 0.0f, 0.0f);
 
     // open video file file
     videoFile = fopen(videoPath.c_str(), "rb");
@@ -99,7 +99,7 @@ ViewState VideoController::update() {
     int expectedFrame = (int)(musicCtrl.getTime() * fps);
 
     // are we ahead of the audio? just wait and don't draw.
-    if (currentFrame > expectedFrame) {
+    if ((currentFrame > expectedFrame) && (!feof(videoFile))) {
         swiWaitForVBlank(); 
         return ViewState::KEEP_CURRENT;
     }
