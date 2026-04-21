@@ -1,126 +1,154 @@
+// VideoController.cpp
 #include <nds.h>
 #include <stdio.h>
+#include <malloc.h>
 #include "core/globals.h"
 #include "VideoController.h"
 
-void VideoController::init(string iFileName, float iFps, ViewState iNextState, bool iIsSkippable) {
-    // set variables
-    nextState = iNextState;
-    fps = iFps;
-    isSkippable = iIsSkippable;
+void VideoController::init(string iFileName, float iFps,
+                           ViewState iNextState, bool iIsSkippable) {
+    nextState    = iNextState;
+    fps          = iFps;
+    isSkippable  = iIsSkippable;
+    fileEOF      = false;
+
     string musicPath = "nitro:/video/" + iFileName + ".pcm";
     string videoPath = "nitro:/video/" + iFileName + ".raw";
 
-    // initialize ring buffer
-    readIndex = 0;
-    writeIndex = 0;
+    readIndex      = 0;
+    writeIndex     = 0;
     framesAvailable = 0;
-    currentFrame = 0;
+    currentFrame   = 0;
 
-    // set video mode for 2 text layers and 2 extended rotation layer
-	videoSetMode(MODE_5_2D);
-	// set sub video mode for 4 text layers
-	videoSetModeSub(MODE_0_2D);
+    // ── Video mode ───────────────────────────────────────────────────────────
+    videoSetMode(MODE_5_2D | DISPLAY_BG3_ACTIVE);
+    videoSetModeSub(MODE_0_2D);
 
-	// map vram bank A and D to main engine background (slot 0)
-	vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
-	vramSetBankD(VRAM_D_MAIN_BG_0x06020000);
-    // map vram bank B to sub engine background
+    vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
+    vramSetBankD(VRAM_D_MAIN_BG_0x06020000);
     vramSetBankC(VRAM_C_SUB_BG);
 
-	// enable extended palettes
-	bgExtPaletteEnable();
-    bgExtPaletteEnableSub();
+    // ── Background ───────────────────────────────────────────────────────────
+#if BYTES_PER_PX == 1
+    // 8bpp bitmap background — uses standard BG_PALETTE, not extended palettes
+    bg = bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+#else
+    bgExtPaletteEnable();
+    bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+#endif
 
-    // initialize background
-    bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0); 
-
-    // point to music
+    // ── Audio ────────────────────────────────────────────────────────────────
     musicCtrl.init(musicPath.c_str(), 0.0f, 0.0f);
 
-    // open video file file
+    // ── File ─────────────────────────────────────────────────────────────────
     videoFile = fopen(videoPath.c_str(), "rb");
-    if (videoFile == NULL) {
+    if (!videoFile) {
         consoleDemoInit();
-        iprintf(videoPath.c_str());
-        while(1) swiWaitForVBlank();
+        iprintf("ERR: %s", videoPath.c_str());
+        while (1) swiWaitForVBlank();
     }
 
-    // allocate memory
-    ramBuffer = (u16*)malloc(BUFFER_SIZE);
+    // ── Palette (8bpp only) ──────────────────────────────────────────────────
+    // The .raw file starts with a 512-byte palette header (256 × BGR555 u16).
+    // Read it once and load it into the main engine BG_PALETTE before any
+    // frames are drawn. BgType_Bmp8 reads from BG_PALETTE, not ext palettes.
+#if BYTES_PER_PX == 1
+    u16 palette[256];
+    size_t palRead = fread(palette, 2, 256, videoFile);
+    if (palRead != 256) {
+        consoleDemoInit();
+        iprintf("ERR: palette read failed (%d/256)", (int)palRead);
+        while (1) swiWaitForVBlank();
+    }
+    
+    for (int i = 0; i < 256; i++) {
+        BG_PALETTE[i] = palette[i];
+    }
+#endif
 
-    // prefill the entire buffer before the video starts playing
-    for (int i = 0; i < FRAMES_TO_BUFFER; i++) {
-        size_t bytes = fread(&ramBuffer[writeIndex * (FRAME_SIZE / 2)], 1, FRAME_SIZE, videoFile);
-        if (bytes == FRAME_SIZE) {
-            writeIndex = (writeIndex + 1) % FRAMES_TO_BUFFER;
-            framesAvailable++;
-        }
+    // ── RAM buffer ───────────────────────────────────────────────────────────
+    // memalign guarantees 32-byte alignment required for DMA
+    ramBuffer = (u8*)memalign(32, BUFFER_SIZE);
+    if (!ramBuffer) {
+        consoleDemoInit();
+        iprintf("ERR: malloc failed");
+        while (1) swiWaitForVBlank();
+    }
+
+    // Pre-fill both slots before playback starts
+    refillBuffer();
+    refillBuffer();
+}
+
+// ── Internal: read one frame into the next write slot ────────────────────────
+void VideoController::refillBuffer() {
+    if (fileEOF || framesAvailable >= FRAMES_TO_BUFFER) return;
+
+    u8* dest = &ramBuffer[writeIndex * FRAME_SIZE];
+    size_t bytes = fread(dest, 1, FRAME_SIZE, videoFile);
+
+    if (bytes == FRAME_SIZE) {
+        // Flush data cache so DMA sees fresh data (critical on ARM9 hardware)
+        DC_FlushRange(dest, FRAME_SIZE);
+        writeIndex = (writeIndex + 1) % FRAMES_TO_BUFFER;
+        framesAvailable++;
+    } else {
+        fileEOF = true;
     }
 }
 
+// ── Main update — called once per game loop iteration ────────────────────────
 ViewState VideoController::update() {
     musicCtrl.update();
     scanKeys();
     int keys = keysDown();
 
-    // transition both screens to black on any input
+    // ── Skip input ───────────────────────────────────────────────────────────
     if (isSkippable && keys) {
         musicCtrl.pause();
-        for(int i = 0; i <= 16; i++) {
+        for (int i = 0; i <= 16; i++) {
             setBrightness(3, -i);
-
-            for (int duration = 0; duration <= 2; duration++) {
-                musicCtrl.update();
-                swiWaitForVBlank();
-            }
+            musicCtrl.update();
+            swiWaitForVBlank();
         }
         return nextState;
     }
 
-    // refill the buffer if we have space
-    if (framesAvailable < FRAMES_TO_BUFFER) {
-        size_t bytes = fread(&ramBuffer[writeIndex * (FRAME_SIZE / 2)], 1, FRAME_SIZE, videoFile);
-        
-        if (bytes == FRAME_SIZE) {
-            writeIndex = (writeIndex + 1) % FRAMES_TO_BUFFER;
-            framesAvailable++;
-        } else {
-            // if we didn't read a full frame, we hit the end of the file.
-            // we shouldn't quit immediately though, because we might still have 
-            // frames sitting in framesAvailable waiting to be drawn
-            if (framesAvailable == 0) {
-                return nextState; 
-            }
-        }
+    // ── Refill buffer BEFORE sync — use VBlank wait time productively ────────
+    for (int r = 0; r < READS_PER_UPDATE; r++) {
+        refillBuffer();
     }
 
-    // check where the video should be right now
+    // ── Sync check ───────────────────────────────────────────────────────────
     int expectedFrame = (int)(musicCtrl.getTime() * fps);
 
-    // are we ahead of the audio? just wait and don't draw.
-    if ((currentFrame > expectedFrame) && (!feof(videoFile))) {
-        swiWaitForVBlank(); 
+    // Ahead of audio — wait one VBlank, don't draw
+    if (currentFrame > expectedFrame && !fileEOF) {
+        swiWaitForVBlank();
         return ViewState::KEEP_CURRENT;
     }
 
-    // severely behind audio? drop a frame
-    if (currentFrame < expectedFrame - 1) {
-        // only skip if we actually have frames in the buffer to skip
-        if (framesAvailable > 0) {
-            readIndex = (readIndex + 1) % FRAMES_TO_BUFFER;
-            framesAvailable--;
-            currentFrame++;
-        }
-        return ViewState::KEEP_CURRENT; 
+    // Behind audio — drop frames to catch up (max 3 at once)
+    int dropBudget = 3;
+    while (currentFrame < expectedFrame - 1 && framesAvailable > 0 && dropBudget-- > 0) {
+        readIndex = (readIndex + 1) % FRAMES_TO_BUFFER;
+        framesAvailable--;
+        currentFrame++;
     }
 
-    // draw the frame
+    // ── End of file with buffer drained ──────────────────────────────────────
+    if (fileEOF && framesAvailable == 0) {
+        return nextState;
+    }
+
+    // ── Draw frame ───────────────────────────────────────────────────────────
     if (framesAvailable > 0) {
-        swiWaitForVBlank(); 
-        
-        dmaCopy(&ramBuffer[readIndex * (FRAME_SIZE / 2)], bgGetGfxPtr(bg), FRAME_SIZE);
-        
+        swiWaitForVBlank();
+        dmaCopy(
+            &ramBuffer[readIndex * FRAME_SIZE],
+            bgGetGfxPtr(bg),
+            FRAME_SIZE
+        );
         readIndex = (readIndex + 1) % FRAMES_TO_BUFFER;
         framesAvailable--;
         currentFrame++;
@@ -129,12 +157,11 @@ ViewState VideoController::update() {
     return ViewState::KEEP_CURRENT;
 }
 
+// ── Cleanup ──────────────────────────────────────────────────────────────────
 void VideoController::cleanup() {
-    // clear screen
     setBrightness(3, 0);
     consoleClear();
 
-    // reset vram
     vramSetBankA(VRAM_A_LCD);
     vramSetBankC(VRAM_C_LCD);
     vramSetBankD(VRAM_D_LCD);
