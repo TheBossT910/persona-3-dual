@@ -37,7 +37,7 @@ class VideoController {
         int writeIndex;
         int framesAvailable;
         
-        u8 audioBuf[16384]; // Temp buffer for reading interwoven audio chunk
+        u8 audioBuf[16384]; // temp buffer for reading interwoven audio chunk
 
         void refillBuffer();
 };

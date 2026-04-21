@@ -33,7 +33,7 @@ void VideoController::init(string iFileName, float iFps,
     bg = bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
 #endif
 
-    // Initialize the ring buffer for video audio
+    // initialize the ring buffer for video audio
     musicCtrl.initVideoAudio();
 
     videoFile = fopen(videoPath.c_str(), "rb");
@@ -73,19 +73,19 @@ void VideoController::refillBuffer() {
 
     u32 audioSize = 0;
     
-    // Read audio chunk size
+    // read audio chunk size
     if (fread(&audioSize, 4, 1, videoFile) != 1) {
         fileEOF = true;
         return;
     }
 
-    // Read audio data and push to ring buffer immediately
+    // read audio data and push to ring buffer immediately
     if (audioSize > 0) {
         fread(audioBuf, 1, audioSize, videoFile);
         musicCtrl.pushVideoAudio(audioBuf, audioSize);
     }
 
-    // Read video frame
+    // read video frame
     u8* dest = &ramBuffer[writeIndex * FRAME_SIZE];
     size_t bytes = fread(dest, 1, FRAME_SIZE, videoFile);
 
@@ -117,7 +117,6 @@ ViewState VideoController::update() {
         refillBuffer();
     }
 
-    // Use getVideoTime() instead of getTime()
     int expectedFrame = (int)(musicCtrl.getVideoTime() * fps);
 
     if (currentFrame > expectedFrame && !fileEOF) {
@@ -162,6 +161,5 @@ void VideoController::cleanup() {
     fclose(videoFile);
     free(ramBuffer);
     
-    // MusicController cleanup handles the ring buffer memory
     musicCtrl.cleanup();
 }

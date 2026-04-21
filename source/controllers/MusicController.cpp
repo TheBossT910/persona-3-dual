@@ -12,14 +12,12 @@ static u32 s_loopEndSamples = 0;
 static long s_loopStartOffset = 0;
 static bool s_loopAtEOF = false;
 
-// --- NEW VIDEO AUDIO GLOBALS ---
 static bool s_isVideoAudio = false;
 static u8* s_ringBuffer = nullptr;
-static u32 s_ringBufferSize = 128 * 1024; // 128KB buffer (~1 second of audio)
+static u32 s_ringBufferSize = 128 * 1024;   // 128KB buffer (~1 second of audio)
 static u32 s_ringReadPos = 0;
 static u32 s_ringWritePos = 0;
 static u32 s_ringAvailable = 0;
-// -------------------------------
 
 static mm_word audio_stream_callback(mm_word length, mm_addr dest, mm_stream_formats format) {
     size_t bytesReq = length * BYTES_PER_FRAME;
@@ -51,7 +49,7 @@ static mm_word audio_stream_callback(mm_word length, mm_addr dest, mm_stream_for
         s_ringAvailable -= bytesToRead;
         s_elapsedSamples += (bytesToRead / BYTES_PER_FRAME);
 
-        // Fill remainder with silence if the ring buffer underruns
+        // fill remainder with silence if the ring buffer underruns
         if (bytesToRead < bytesReq) {
             memset(out + bytesToRead, 0, bytesReq - bytesToRead);
         }
@@ -126,7 +124,6 @@ void MusicController::init(const char* filePath, float loopStartSeconds, float l
     mmStreamUpdate();
 }
 
-// --- NEW VIDEO AUDIO METHODS ---
 void MusicController::initVideoAudio() {
     cleanup();
 
@@ -158,16 +155,16 @@ void MusicController::pushVideoAudio(const u8* data, size_t size) {
     if (!s_ringBuffer || !s_isVideoAudio) return;
     
     if (s_ringAvailable + size > s_ringBufferSize) {
-        size = s_ringBufferSize - s_ringAvailable; // Prevent overflow
+        size = s_ringBufferSize - s_ringAvailable;  // prevent overflow
     }
     
     size_t firstPart = s_ringBufferSize - s_ringWritePos;
     if (size <= firstPart) {
-        // Fits perfectly before wrapping
+        // fits perfectly before wrapping
         memcpy(&s_ringBuffer[s_ringWritePos], data, size);
         s_ringWritePos = (s_ringWritePos + size) % s_ringBufferSize;
     } else {
-        // Wraps around the end of the buffer to the beginning
+        // wraps around the end of the buffer to the beginning
         memcpy(&s_ringBuffer[s_ringWritePos], data, firstPart);
         size_t secondPart = size - firstPart;
         memcpy(s_ringBuffer, data + firstPart, secondPart);
@@ -179,14 +176,9 @@ void MusicController::pushVideoAudio(const u8* data, size_t size) {
 float MusicController::getVideoTime() {
     return (float)s_elapsedSamples / (float)AUDIO_SAMPLE_RATE;
 }
-// -------------------------------
 
 void MusicController::update() {
     if (s_streamOpen) mmStreamUpdate();
-}
-
-float MusicController::getTime() {
-    return (float)s_elapsedSamples / (float)AUDIO_SAMPLE_RATE;
 }
 
 void MusicController::pause() { s_isPaused = true; }
