@@ -1,195 +1,43 @@
 #include <nds.h>
-#include <maxmod9.h>
-#include <mad.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "MusicController.h"
 
-#define FILE_READ_CHUNK  (4 * 1024)
-#define STREAM_BUF_SIZE  (8 * 1024)
+static FILE* s_audioFile = nullptr;
+static bool s_isPaused = false;
+static bool s_streamOpen = false;
 
-static FILE*          s_mp3File        = nullptr;
-static unsigned char* s_streamBuf      = nullptr;
-static bool           s_fileEOF        = false;
-static bool           s_guardAdded     = false;
-static bool           s_pendingRestart = false;
-static bool           s_streamOpen     = false;
+static u32 s_elapsedSamples = 0;
+static u32 s_loopStartSamples = 0;
+static u32 s_loopEndSamples = 0;
+static long s_loopStartOffset = 0;
 
-static struct mad_stream madStream;
-static struct mad_frame  madFrame;
-static struct mad_synth  madSynth;
+// Maxmod calls this automatically when it needs more audio
+static mm_word audio_stream_callback(mm_word length, mm_addr dest, mm_stream_formats format) {
+    size_t bytesReq = length * BYTES_PER_FRAME;
 
-#define MAX_SAMPLES_PER_FRAME 1152
-static s16 leftoverBuffer[MAX_SAMPLES_PER_FRAME * 2];
-static int leftoverCount = 0;
-static int leftoverIndex = 0;
-
-static long  s_loopStartOffset  = 0;
-static float s_loopStartSeconds = 0.0f;
-static float s_loopEndSeconds   = -1.0f;    // -1.0f = play until end of file
-static float s_elapsedSeconds   = 0.0f;
-
-// internal helpers
-static inline s16 fixedToS16(mad_fixed_t sample) {
-    if (sample >= MAD_F_ONE)  return 32767;
-    if (sample <= -MAD_F_ONE) return -32768;
-    return (s16)(sample >> (MAD_F_FRACBITS - 15));
-}
-
-static void madReinit() {
-    mad_stream_finish(&madStream);
-    mad_frame_finish(&madFrame);
-    mad_synth_finish(&madSynth);
-    mad_stream_init(&madStream);
-    mad_frame_init(&madFrame);
-    mad_synth_init(&madSynth);
-}
-
-static bool refillStreamBuffer() {
-    size_t remaining = 0;
-    if (madStream.next_frame != nullptr)
-        remaining = madStream.bufend - madStream.next_frame;
-
-    if (remaining > 0)
-        memmove(s_streamBuf, madStream.next_frame, remaining);
-
-    size_t bytesRead = 0;
-    if (!s_fileEOF) {
-        size_t space  = STREAM_BUF_SIZE - remaining - MAD_BUFFER_GUARD;
-        size_t toRead = (space < FILE_READ_CHUNK) ? space : FILE_READ_CHUNK;
-        bytesRead = fread(s_streamBuf + remaining, 1, toRead, s_mp3File);
-        if (bytesRead < toRead) s_fileEOF = true;
+    if (!s_audioFile || s_isPaused) {
+        memset(dest, 0, bytesReq); // output silence
+        return length;
     }
 
-    if (s_fileEOF && s_guardAdded && bytesRead == 0) return false;
+    // Direct read from SD to audio hardware - ZERO CPU DECODING!
+    size_t bytesRead = fread(dest, 1, bytesReq, s_audioFile);
+    s_elapsedSamples += (bytesRead / BYTES_PER_FRAME);
 
-    size_t totalBytes = remaining + bytesRead;
-    if (totalBytes == 0) return false;
-
-    if (s_fileEOF && !s_guardAdded) {
-        memset(s_streamBuf + totalBytes, 0, MAD_BUFFER_GUARD);
-        totalBytes += MAD_BUFFER_GUARD;
-        s_guardAdded = true;
-    }
-
-    mad_stream_buffer(&madStream, s_streamBuf, totalBytes);
-    return true;
-}
-
-static void restartMp3() {
-    fseek(s_mp3File, s_loopStartOffset, SEEK_SET);
-    s_fileEOF        = false;
-    s_guardAdded     = false;
-    leftoverCount    = 0;
-    leftoverIndex    = 0;
-    s_elapsedSeconds = s_loopStartSeconds;  // reset to loop start time, not 0
-    madReinit();
-
-    size_t bytesRead = fread(s_streamBuf, 1, FILE_READ_CHUNK, s_mp3File);
-    if (bytesRead < FILE_READ_CHUNK) {
-        s_fileEOF = true;
-        memset(s_streamBuf + bytesRead, 0, MAD_BUFFER_GUARD);
-        bytesRead += MAD_BUFFER_GUARD;
-    }
-    mad_stream_buffer(&madStream, s_streamBuf, bytesRead);
-}
-
-// decode and discard frames until we reach the target time,
-// then snapshot the file position as the loop point
-static long findOffsetAtTime(float targetSeconds) {
-    float elapsed = 0.0f;
-
-    while (elapsed < targetSeconds) {
-        while (mad_frame_decode(&madFrame, &madStream) != 0) {
-            if (madStream.error == MAD_ERROR_BUFLEN) {
-                if (!refillStreamBuffer()) return -1;
-                continue;
-            }
-            if (!MAD_RECOVERABLE(madStream.error)) return -1;
+    // Looping logic
+    if (s_loopEndSamples > 0 && s_elapsedSamples >= s_loopEndSamples) {
+        fseek(s_audioFile, s_loopStartOffset, SEEK_SET);
+        s_elapsedSamples = s_loopStartSamples;
+        
+        // Fill whatever space is left in the buffer after looping
+        size_t remaining = bytesReq - bytesRead;
+        if (remaining > 0) {
+            fread((u8*)dest + bytesRead, 1, remaining, s_audioFile);
+            s_elapsedSamples += (remaining / BYTES_PER_FRAME);
         }
-
-        mad_synth_frame(&madSynth, &madFrame);
-
-        // Each frame's duration in seconds
-        float frameDuration = (float)madSynth.pcm.length / (float)madSynth.pcm.samplerate;
-        elapsed += frameDuration;
-    }
-
-    // snapshot where we are in the file right now
-    // next_frame points to the start of the next unread frame in the buffer
-    // we calculate its actual file position from how much buffer is ahead of it
-    size_t bufferAhead = madStream.bufend - madStream.next_frame;
-    long filePos = ftell(s_mp3File) - (long)bufferAhead;
-    return filePos;
-}
-
-// maxmod stream callback
-static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_formats format) {
-    s16* output = (s16*)dest;
-    mm_word samples_filled = 0;
-
-    if (s_pendingRestart) {
-        s_pendingRestart = false;
-        restartMp3();
-    }
-
-    while (samples_filled < length) {
-        if (leftoverCount > 0) {
-            int to_copy = leftoverCount;
-            if ((mm_word)(samples_filled + to_copy) > length)
-                to_copy = length - samples_filled;
-
-            for (int i = 0; i < to_copy; i++) {
-                *output++ = leftoverBuffer[leftoverIndex * 2];
-                *output++ = leftoverBuffer[leftoverIndex * 2 + 1];
-                leftoverIndex++;
-            }
-            leftoverCount  -= to_copy;
-            samples_filled += to_copy;
-            continue;
-        }
-
-        // Check if we've hit the loop end point
-        if (s_loopEndSeconds > 0.0f && s_elapsedSeconds >= s_loopEndSeconds) {
-            s_pendingRestart = true;
-            break;
-        }
-
-        if (mad_frame_decode(&madFrame, &madStream) != 0) {
-            if (MAD_RECOVERABLE(madStream.error)) continue;
-            if (madStream.error == MAD_ERROR_BUFLEN) {
-                if (!refillStreamBuffer()) {
-                    s_pendingRestart = true;
-                    break;
-                }
-                continue;
-            }
-            break;
-        }
-
-        mad_synth_frame(&madSynth, &madFrame);
-        int  decoded_samples = madSynth.pcm.length;
-        bool isStereo        = (madSynth.pcm.channels == 2);
-
-        // track elapsed time (one frame's worth per decode)
-        s_elapsedSeconds += (float)decoded_samples / (float)madSynth.pcm.samplerate;
-
-        leftoverIndex = 0;
-        leftoverCount = decoded_samples;
-
-        for (int i = 0; i < decoded_samples; i++) {
-            s16 left  = fixedToS16(madSynth.pcm.samples[0][i]);
-            s16 right = isStereo ? fixedToS16(madSynth.pcm.samples[1][i]) : left;
-            leftoverBuffer[i * 2]     = left;
-            leftoverBuffer[i * 2 + 1] = right;
-        }
-    }
-
-    while (samples_filled < length) {
-        *output++ = 0;
-        *output++ = 0;
-        samples_filled++;
+    } else if (bytesRead < bytesReq) {
+        // End of file padding
+        memset((u8*)dest + bytesRead, 0, bytesReq - bytesRead);
     }
 
     return length;
@@ -197,160 +45,67 @@ static mm_word mp3_stream_callback(mm_word length, mm_addr dest, mm_stream_forma
 
 MusicController::MusicController() {}
 
-int MusicController::probeFirstFrame() {
-    int sampleRate = 0;
-    int confirmedRate = 0;
-    int confirmCount = 0;
-
-    // decode until we see the same sample rate 3 times in a row
-    // this skips VBR/Xing header frames which often report wrong rates
-    while (confirmCount < 3) {
-        while (mad_frame_decode(&madFrame, &madStream) != 0) {
-            if (madStream.error == MAD_ERROR_BUFLEN) {
-                if (!refillStreamBuffer()) break;
-                continue;
-            }
-            if (!MAD_RECOVERABLE(madStream.error)) break;
-        }
-        mad_synth_frame(&madSynth, &madFrame);
-        int detectedRate = madSynth.pcm.samplerate;
-
-        if (detectedRate == confirmedRate) {
-            confirmCount++;
-        } else {
-            confirmedRate = detectedRate;
-            confirmCount = 1;
-        }
-    }
-    sampleRate = confirmedRate;
-    // iprintf("Confirmed sample rate: %d Hz\n", sampleRate);
-    return sampleRate;
-}
-
-// ID3 parsing logic
-long MusicController::getAudioStartOffset(FILE* file) {
-    if (!file) return 0;
-    
-    unsigned char id3Header[10];
-    if (fread(id3Header, 1, 10, file) == 10) {
-        if (id3Header[0] == 'I' && id3Header[1] == 'D' && id3Header[2] == '3') {
-            // ID3v2 size is stored as a 28-bit sync-safe integer
-            int id3Size = (id3Header[6] << 21) | (id3Header[7] << 14) | (id3Header[8] << 7) | id3Header[9];
-            return id3Size + 10;
-        }
-    }
-    return 0; // no ID3v2 tag found, start at 0
-}
-
-void MusicController::resetStreamToOffset(long offset) {
-    fseek(s_mp3File, offset, SEEK_SET);
-    s_fileEOF    = false;
-    s_guardAdded = false;
-    
-    madReinit();
-    refillStreamBuffer();
-    
-    // reset leftover tracking (discard any previous frame's audio)
-    leftoverCount = 0;
-    leftoverIndex = 0;
-}
-
-void MusicController::init(const char* filePath, float loopStartSeconds = 0.0f, float loopEndSeconds = -1.0f) {
-    // cleanup any previous audio streams
+void MusicController::init(const char* filePath, float loopStartSeconds, float loopEndSeconds) {
     cleanup();
 
-    s_loopEndSeconds = loopEndSeconds;
-    s_elapsedSeconds = 0.0f;
-    s_pendingRestart = false;
+    s_audioFile = fopen(filePath, "rb");
+    if (!s_audioFile) { iprintf("MusicController: failed to open %s\n", filePath); return; }
 
-    s_mp3File = fopen(filePath, "rb");
-    if (!s_mp3File) { iprintf("MusicController: failed to open %s\n", filePath); return; }
+    s_elapsedSamples = 0;
+    s_isPaused = false;
 
-    s_streamBuf = (unsigned char*)malloc(STREAM_BUF_SIZE);
-    if (!s_streamBuf) { iprintf("MusicController: out of memory\n"); fclose(s_mp3File); return; }
+    // Calculate loop points in pure samples and bytes
+    s_loopStartSamples = (u32)(loopStartSeconds * AUDIO_SAMPLE_RATE);
+    s_loopStartOffset = s_loopStartSamples * BYTES_PER_FRAME;
 
-    // find where the real audio starts
-    long audioStartOffset = getAudioStartOffset(s_mp3File);
-
-    // prep the stream to read the first frame
-    resetStreamToOffset(audioStartOffset);
-
-    // probe to get the sample rate
-    int sampleRate = probeFirstFrame();
-    if (sampleRate < 0) { iprintf("MusicController: decode error\n"); return; }
-
-    // find and store the loop point
-    if (loopStartSeconds > 0.0f) {
-        s_loopStartSeconds = loopStartSeconds;
-        s_loopStartOffset  = findOffsetAtTime(loopStartSeconds);
+    if (loopEndSeconds > 0.0f) {
+        s_loopEndSamples = (u32)(loopEndSeconds * AUDIO_SAMPLE_RATE);
     } else {
-        s_loopStartSeconds = 0.0f;
-        s_loopStartOffset  = audioStartOffset;
+        s_loopEndSamples = 0; 
     }
 
-    // reset stream back to the beginning for actual playback
-    resetStreamToOffset(audioStartOffset);
-
-    // start Maxmod
+    // Start stream
     mm_stream stream;
     stream.timer         = MM_TIMER0;
-    stream.sampling_rate = sampleRate;
-    stream.buffer_length = 2304;
-    stream.callback      = mp3_stream_callback;
+    stream.sampling_rate = AUDIO_SAMPLE_RATE;
+    stream.buffer_length = 2048; // Maxmod handles this easily now
+    stream.callback      = audio_stream_callback;
     stream.format        = MM_STREAM_16BIT_STEREO;
     stream.manual        = true;
     mmStreamOpen(&stream);
     s_streamOpen = true;
 
-    // fill stream
     mmStreamUpdate();
 }
 
 void MusicController::update() {
-    mmStreamUpdate();
+    if (s_streamOpen && !s_isPaused) mmStreamUpdate();
 }
+
+float MusicController::getTime() {
+    return (float)s_elapsedSamples / (float)AUDIO_SAMPLE_RATE;
+}
+
+void MusicController::pause() { s_isPaused = true; }
+void MusicController::resume() { s_isPaused = false; }
 
 void MusicController::cleanup() {
     if (s_streamOpen) {
         mmStreamClose();
         s_streamOpen = false;
     }
-
-    mad_synth_finish(&madSynth);
-    mad_frame_finish(&madFrame);
-    mad_stream_finish(&madStream);
-
-    if (s_streamBuf) { free(s_streamBuf);  s_streamBuf = nullptr; }
-    if (s_mp3File) { fclose(s_mp3File);  s_mp3File   = nullptr; }
-}
-
-void MusicController::pause()  {
-    if (s_streamOpen) {
-        mmStreamClose();
-        s_streamOpen = false;
+    if (s_audioFile) {
+        fclose(s_audioFile);
+        s_audioFile = nullptr;
     }
 }
 
-float MusicController::getTime() { return s_elapsedSeconds; }
-
-void MusicController::loadSFX(mm_word effectID) {
-    mmLoadEffect(effectID);
-}
-
+// SFX methods remain exactly the same as your original code...
+void MusicController::loadSFX(mm_word effectID) { mmLoadEffect(effectID); }
 mm_sfxhand MusicController::playSFX(mm_word effectID, int volume, int panning) {
     mm_sound_effect effect;
-    
-    effect.id      = effectID;              // the id from the soundbank header (e.g., SFX_BOOM)
-    effect.rate    = (int)(1.0f * (1<<10)); // 1.0x playback rate (1024)
-    effect.handle  = 0;                     // 0 = auto-allocate a channel
-    effect.volume  = volume;                // 0-255
-    effect.panning = panning;               // 0 (left) to 255 (right)
-    
+    effect.id = effectID; effect.rate = (int)(1.0f * (1<<10));
+    effect.handle = 0; effect.volume = volume; effect.panning = panning;
     return mmEffectEx(&effect);
 }
-
-void MusicController::stopSFX(mm_sfxhand handle) {
-    if (handle != 0) {
-        mmEffectCancel(handle);
-    }
-}
+void MusicController::stopSFX(mm_sfxhand handle) { if (handle != 0) mmEffectCancel(handle); }

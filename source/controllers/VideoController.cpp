@@ -8,7 +8,7 @@ void VideoController::init(string iFileName, float iFps, ViewState iNextState, b
     nextState = iNextState;
     fps = iFps;
     isSkippable = iIsSkippable;
-    string musicPath = "nitro:/video/" + iFileName + ".mp3";
+    string musicPath = "nitro:/video/" + iFileName + ".pcm";
     string videoPath = "nitro:/video/" + iFileName + ".raw";
 
     // set video mode for 2 text layers and 2 extended rotation layer

@@ -25,7 +25,7 @@ void MainMenuView::Init() {
     musicCtrl.loadSFX(SFX_MENU);
     musicCtrl.loadSFX(SFX_SELECT);
     musicCtrl.loadSFX(SFX_CANCEL);
-    musicCtrl.init("nitro:/music/aria_of_the_soul.mp3", 0.0f, 164.940f);
+    musicCtrl.init("nitro:/music/aria_of_the_soul.pcm", 0.0f, 164.940f);
 
     // transition both screens from white
     for(int i = 16; i > 0; i--) {
