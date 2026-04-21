@@ -140,7 +140,7 @@ void IntroView::Init() {
 
     // point to music
     musicCtrl.loadSFX(SFX_SELECT);
-    musicCtrl.init("nitro:/music/tightrope.raw_audio", 17.962f, 66.082f);
+    musicCtrl.init("nitro:/music/tightrope.pcm", 17.962f, 66.082f);
 
     // hide sub screen text and attribution text layer
     REG_BLDCNT_SUB = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_SRC_BG0 | BLEND_DST_BG0 | BLEND_DST_BG1 | BLEND_DST_BACKDROP;
