@@ -66,6 +66,7 @@ Iwatodai Dorm (WIP)
 - [x] Collision + interaction detection
 - [x] Dialogue system
 - [x] Music/SFX playback
+- [x] Video playback
 - [ ] Combat system
 - [ ] Iwatodai Dorm — fully detailed environment
 - [ ] Additional scenes (world map, school room, Tartarus)
