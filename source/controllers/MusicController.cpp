@@ -36,10 +36,18 @@ static mm_word audio_stream_callback(mm_word length, mm_addr dest, mm_stream_for
         }
 
         u8* out = (u8*)dest;
-        for (u32 i = 0; i < bytesToRead; i++) {
-            out[i] = s_ringBuffer[s_ringReadPos];
-            s_ringReadPos = (s_ringReadPos + 1) % s_ringBufferSize;
+        size_t firstPart = s_ringBufferSize - s_ringReadPos;
+        
+        if (bytesToRead <= firstPart) {
+            memcpy(out, &s_ringBuffer[s_ringReadPos], bytesToRead);
+            s_ringReadPos = (s_ringReadPos + bytesToRead) % s_ringBufferSize;
+        } else {
+            memcpy(out, &s_ringBuffer[s_ringReadPos], firstPart);
+            size_t secondPart = bytesToRead - firstPart;
+            memcpy(out + firstPart, s_ringBuffer, secondPart);
+            s_ringReadPos = secondPart;
         }
+        
         s_ringAvailable -= bytesToRead;
         s_elapsedSamples += (bytesToRead / BYTES_PER_FRAME);
 
@@ -153,9 +161,17 @@ void MusicController::pushVideoAudio(const u8* data, size_t size) {
         size = s_ringBufferSize - s_ringAvailable; // Prevent overflow
     }
     
-    for (size_t i = 0; i < size; i++) {
-        s_ringBuffer[s_ringWritePos] = data[i];
-        s_ringWritePos = (s_ringWritePos + 1) % s_ringBufferSize;
+    size_t firstPart = s_ringBufferSize - s_ringWritePos;
+    if (size <= firstPart) {
+        // Fits perfectly before wrapping
+        memcpy(&s_ringBuffer[s_ringWritePos], data, size);
+        s_ringWritePos = (s_ringWritePos + size) % s_ringBufferSize;
+    } else {
+        // Wraps around the end of the buffer to the beginning
+        memcpy(&s_ringBuffer[s_ringWritePos], data, firstPart);
+        size_t secondPart = size - firstPart;
+        memcpy(s_ringBuffer, data + firstPart, secondPart);
+        s_ringWritePos = secondPart;
     }
     s_ringAvailable += size;
 }
