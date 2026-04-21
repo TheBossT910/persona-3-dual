@@ -35,19 +35,19 @@ export GAME_ICON := $(CURDIR)/../icon.bmp
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb
 
-CFLAGS	:=	-g -Wall -O2 -ffunction-sections -fdata-sections\
+CFLAGS  :=  -g -Wall -O3 -flto -ffunction-sections -fdata-sections\
 		$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM9
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+LDFLAGS =   -specs=ds_arm9.specs -g $(ARCH) -flto -Wl,--gc-sections -Wl,-Map,$(notdir $*.map)
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS    := -lmad -lmm9 -lfat -lnds9
+LIBS    := -lmm9 -lfat -lnds9
 
 
 #---------------------------------------------------------------------------------
