@@ -11,6 +11,12 @@ void VideoController::init(string iFileName, float iFps, ViewState iNextState, b
     string musicPath = "nitro:/video/" + iFileName + ".pcm";
     string videoPath = "nitro:/video/" + iFileName + ".raw";
 
+    // initialize ring buffer
+    readIndex = 0;
+    writeIndex = 0;
+    framesAvailable = 0;
+    currentFrame = 0;
+
     // set video mode for 2 text layers and 2 extended rotation layer
 	videoSetMode(MODE_5_2D);
 	// set sub video mode for 4 text layers
@@ -40,27 +46,30 @@ void VideoController::init(string iFileName, float iFps, ViewState iNextState, b
         while(1) swiWaitForVBlank();
     }
 
-    ramBuffer = (u16*)malloc(FRAME_SIZE);
-    pulldownState = 0;
+    // allocate memory
+    ramBuffer = (u16*)malloc(BUFFER_SIZE);
 
-    // initial read
-    fread(ramBuffer, 1, FRAME_SIZE, videoFile);
+    // prefill the entire buffer before the video starts playing
+    for (int i = 0; i < FRAMES_TO_BUFFER; i++) {
+        size_t bytes = fread(&ramBuffer[writeIndex * (FRAME_SIZE / 2)], 1, FRAME_SIZE, videoFile);
+        if (bytes == FRAME_SIZE) {
+            writeIndex = (writeIndex + 1) % FRAMES_TO_BUFFER;
+            framesAvailable++;
+        }
+    }
 }
 
 ViewState VideoController::update() {
     musicCtrl.update();
-
     scanKeys();
     int keys = keysDown();
 
-    // transition to intro on any input
+    // transition both screens to black on any input
     if (isSkippable && keys) {
         musicCtrl.pause();
-        // transition both screens to black
         for(int i = 0; i <= 16; i++) {
             setBrightness(3, -i);
 
-            // wait a few frames
             for (int duration = 0; duration <= 2; duration++) {
                 swiWaitForVBlank();
             }
@@ -68,34 +77,53 @@ ViewState VideoController::update() {
         return nextState;
     }
 
+    // refill the buffer if we have space
+    if (framesAvailable < FRAMES_TO_BUFFER) {
+        size_t bytes = fread(&ramBuffer[writeIndex * (FRAME_SIZE / 2)], 1, FRAME_SIZE, videoFile);
+        
+        if (bytes == FRAME_SIZE) {
+            writeIndex = (writeIndex + 1) % FRAMES_TO_BUFFER;
+            framesAvailable++;
+        } else {
+            // if we didn't read a full frame, we hit the end of the file.
+            // we shouldn't quit immediately though, because we might still have 
+            // frames sitting in framesAvailable waiting to be drawn
+            if (framesAvailable == 0) {
+                return nextState; 
+            }
+        }
+    }
+
     // check where the video should be right now
-    // frames per second * current audio time
     int expectedFrame = (int)(musicCtrl.getTime() * fps);
 
-    // are we ahead of the audio? Just wait and don't draw.
+    // are we ahead of the audio? just wait and don't draw.
     if (currentFrame > expectedFrame) {
         swiWaitForVBlank(); 
         return ViewState::KEEP_CURRENT;
     }
 
-    // are we severely behind the audio? (drop a frame to catch up)
-    // if the SD card lagged and we are more than 1 frame behind, skip rendering.
+    // severely behind audio? drop a frame
     if (currentFrame < expectedFrame - 1) {
-        // skip reading 98KB, just jump the file pointer forward
-        fseek(videoFile, FRAME_SIZE, SEEK_CUR);
-        currentFrame++;
+        // only skip if we actually have frames in the buffer to skip
+        if (framesAvailable > 0) {
+            readIndex = (readIndex + 1) % FRAMES_TO_BUFFER;
+            framesAvailable--;
+            currentFrame++;
+        }
         return ViewState::KEEP_CURRENT; 
     }
 
-    // we are perfectly in sync. draw the frame
-    swiWaitForVBlank(); // wait for screen refresh to prevent tearing
-    dmaCopy(ramBuffer, bgGetGfxPtr(bg), FRAME_SIZE);
-    
-    // read the next frame immediately
-    size_t bytesRead = fread(ramBuffer, 1, FRAME_SIZE, videoFile);
-    if (bytesRead < FRAME_SIZE) return nextState; // EOF
-    
-    currentFrame++;
+    // draw the frame
+    if (framesAvailable > 0) {
+        swiWaitForVBlank(); 
+        
+        dmaCopy(&ramBuffer[readIndex * (FRAME_SIZE / 2)], bgGetGfxPtr(bg), FRAME_SIZE);
+        
+        readIndex = (readIndex + 1) % FRAMES_TO_BUFFER;
+        framesAvailable--;
+        currentFrame++;
+    }
 
     return ViewState::KEEP_CURRENT;
 }

@@ -4,7 +4,9 @@
 #include "core/globals.h"
 #include <string>
 
-# define FRAME_SIZE (256 * 192 * 2)
+#define FRAME_SIZE (256 * 192 * 2)
+#define FRAMES_TO_BUFFER 10
+#define BUFFER_SIZE (FRAME_SIZE * FRAMES_TO_BUFFER)
 
 using namespace std;
 
@@ -21,8 +23,12 @@ class VideoController {
         float fps;
 
         FILE* videoFile;
-        u16* ramBuffer;
-        int pulldownState;
         int currentFrame;
-        int bg;  
+        int bg;
+
+        // buffer
+        u16* ramBuffer;
+        int readIndex;
+        int writeIndex;
+        int framesAvailable;
 };
