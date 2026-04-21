@@ -134,7 +134,10 @@ ViewState IwatodaiDormView::Update() {
     scanKeys();
     u32 keys = keysHeld();
     u32 pressed = keysDown();
-    if(keys & KEY_START) return ViewState::MAIN_MENU;
+    if(keys & KEY_START) {
+        musicCtrl.pause();
+        return ViewState::MAIN_MENU;
+    }
 
     // only process world input when dialogue is not active
     if (!dialogueCtrl.isActive()) {

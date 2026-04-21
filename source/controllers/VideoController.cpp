@@ -71,6 +71,7 @@ ViewState VideoController::update() {
             setBrightness(3, -i);
 
             for (int duration = 0; duration <= 2; duration++) {
+                musicCtrl.update();
                 swiWaitForVBlank();
             }
         }

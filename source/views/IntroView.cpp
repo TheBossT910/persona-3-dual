@@ -191,6 +191,7 @@ ViewState IntroView::Update() {
 
             // wait a few frames
             for (int duration = 0; duration <= 2; duration++) {
+                musicCtrl.update();
                 swiWaitForVBlank();
             }
         }
