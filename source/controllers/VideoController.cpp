@@ -11,7 +11,7 @@ void VideoController::init(string iFileName, float iFps,
     isSkippable  = iIsSkippable;
     fileEOF      = false;
 
-    // Use single interweaved file
+    // use single interweaved file
     string videoPath = "nitro:/video/" + iFileName + ".vid";
 
     readIndex       = 0;

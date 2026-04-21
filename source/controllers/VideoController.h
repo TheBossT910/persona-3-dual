@@ -7,7 +7,7 @@
 
 #define FRAME_W         256
 #define FRAME_H         192
-#define BYTES_PER_PX    1
+#define BYTES_PER_PX    1  // 8 bit = 1, 16 bit = 2
 #define FRAME_SIZE      (FRAME_W * FRAME_H * BYTES_PER_PX)
 #define FRAMES_TO_BUFFER 15
 #define BUFFER_SIZE     (FRAME_SIZE * FRAMES_TO_BUFFER)
