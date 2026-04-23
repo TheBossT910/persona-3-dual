@@ -1,0 +1,54 @@
+# ============================================================
+# park.dlg  —  Comprehensive example scene
+# One file = one scene/view (the park).
+# Each [interaction] is a separate dialogue graph.
+# ============================================================
+
+# Scene-wide background defaults.
+# Any character listed here gets this bg unless overridden locally.
+@bg Merchant  bgAkihiko
+
+== Scene: Riverside Park ==
+
+# ============================================================
+# INTERACTION 5 — Merchant with looping/conditional shop flavour
+# A travelling merchant has a few things to say; ends with a jump.
+# ============================================================
+
+[interaction: merchant_greeting | Travelling merchant near the east gate]
+
+Merchant: Welcome, welcome! Looking for anything in particular?
+Merchant: I've got maps, dried goods, and a few... curiosities.
+
+Merchant: What catches your eye?
+
+[choice]
+    > What kind of curiosities?  -> @merch_curious
+    > Tell me about the maps.    -> @merch_maps
+    > Just browsing, thanks.     -> @merch_bye
+
+@merch_curious
+Merchant: Ah, a person of taste!
+Merchant: I've got a compass that always points to your greatest regret.
+Merchant: Terrible for navigation. Wonderful for drama.
+Merchant: Interested?
+
+[choice]
+    > How much?   -> @merch_price
+    > No thanks.  -> @merch_bye
+
+@merch_price
+Merchant: For you? Three silver.
+Merchant: Or one favour. I'll let you decide which is cheaper.
+[end]
+
+@merch_maps
+Merchant: Best maps this side of the river!
+Merchant: I've got the eastern districts, old town routes, even the underground canals.
+Merchant: The canal map's not strictly... legal to own. But that's between us.
+[end]
+
+@merch_bye
+Merchant: No trouble at all. Come back anytime!
+Merchant: I'll be here until the lanterns go out.
+[end]

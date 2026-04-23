@@ -13,8 +13,8 @@
 #include "environment.h"
 // collision
 #include "IwatodaiDormCollision.h"
-// 2D
-#include "akihiko.h"
+// dialogue
+#include "demo_dialogue.h"
 
 // texture ID
 static int environmentTextureId;
@@ -85,17 +85,9 @@ void IwatodaiDormView::Init() {
     glPolyFmt(POLY_ALPHA(31) | POLY_CULL_BACK);
     glColor3b(255, 255, 255);   // keep white so texture colors aren't tinted
 
-    // sub screen, 2D and console
-    bgAkihiko = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 0, 1);
-    dmaFillHalfWords(0, bgGetMapPtr(bgAkihiko), 2048);
-    // hiding Akihiko by default
-    bgHide(bgAkihiko);
-
-    dmaCopy(akihikoTiles,  bgGetGfxPtr(bgAkihiko), akihikoTilesLen);
-    dmaCopy(akihikoMap,  bgGetMapPtr(bgAkihiko), akihikoMapLen);
-    vramSetBankH(VRAM_H_LCD);                   // can only write to extended palettes in LCD mode
-    dmaCopy(akihikoPal,  &VRAM_H_EXT_PALETTE[0][0], akihikoPalLen);
-    vramSetBankH(VRAM_H_SUB_BG_EXT_PALETTE);    // map vram banks to extended palettes
+    // setup dialogue (sub screen)
+    demo_dialogue_bg_slot = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 0, 1);
+    dmaFillHalfWords(0, bgGetMapPtr(demo_dialogue_bg_slot), 2048);
     
     // setup console
     consoleInit(&console, 1, BgType_Text4bpp, BgSize_T_256x256, 4, 5, false, true);
@@ -103,24 +95,12 @@ void IwatodaiDormView::Init() {
 
     // adjust sub screen image and console to sit correctly on each other
     bgSetPriority(console.bgId, 0);
-    bgSetPriority(bgAkihiko, 1);
+    bgSetPriority(demo_dialogue_bg_slot, 1);
 
     bgUpdate();
 
     // get controllers
     playerCtrl = new CharacterController(MAP_WIDTH, MAP_HEIGHT, &collision_map[0][0], tileSize, worldOffsetX, worldOffsetZ, characterRadius, speed, angleIncrement, distance, lookAhead, angle, translateX, translateZ, characterFacingAngle);
-    
-    // build dialogue graph for dialogueCtrl
-    lines[0] = { "Akihiko", "text line 1", bgAkihiko, NULL, &lines[1], {} };
-    lines[1] = { "Akihiko", "text line 2", bgAkihiko, &lines[0], &lines[2], {} };
-
-    lines[3] = { "Akihiko", "selection 1", bgAkihiko, &lines[2], NULL, {} };
-    lines[4] = { "Akihiko", "selection 2", bgAkihiko, &lines[2], NULL, {} };
-
-    dialogueSelection sel1 = { "Go home",         false, &lines[3] };
-    dialogueSelection sel2 = { "Go for a walk",   false, &lines[4] };
-    
-    lines[2] = { "Akihiko", "line 3, sel", bgAkihiko, &lines[1], NULL, { sel1, sel2 } };
 
     // point to music
     musicCtrl.init("nitro:/music/changing_seasons.pcm", 0.0f, -1.0f);
@@ -145,10 +125,13 @@ ViewState IwatodaiDormView::Update() {
         camPos = playerCtrl->update(keys);
 
         // trigger dialogue from interaction
+        demo_unload();
         if (playerCtrl->isTileAt() == TileType::CHARACTER_Akihiko) {
             iprintf("\x1b[0;0HPress A to talk");
             if (pressed & KEY_A) {
-                dialogueCtrl.start(&lines[0]);
+                demo_merchant_greeting_load();
+                dialogueCtrl.setLoader(demo_merchant_greeting_load_bg);
+                dialogueCtrl.start(demo_merchant_greeting_first());
             }
         } else {
             consoleClear();
@@ -196,9 +179,6 @@ void IwatodaiDormView::Cleanup() {
     // clear screen
     setBrightness(3, 0);
     consoleClear();
-
-    // reset backgrounds
-    dmaFillHalfWords(0, bgGetMapPtr(bgAkihiko), 2048);
 
     // reset textures
     glDeleteTextures(1, &environmentTextureId);

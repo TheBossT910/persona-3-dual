@@ -13,7 +13,7 @@ class IwatodaiDormView : public View {
 
     private:
         // sub screen
-        int bgAkihiko;
+        // int bgAkihiko;
         PrintConsole console;
 
         // controllers
