@@ -6,49 +6,51 @@
 
 # Scene-wide background defaults.
 # Any character listed here gets this bg unless overridden locally.
-@bg Merchant  bgAkihiko
+@bg Akihiko   bgAkihiko
+@bg Yuki      bgYuki
+@bg Guard     bgGuard
 
 == Scene: Riverside Park ==
 
 # ============================================================
-# INTERACTION 5 — Merchant with looping/conditional shop flavour
-# A travelling merchant has a few things to say; ends with a jump.
+# INTERACTION 4 — Three-way conversation, multiple characters
+# The player stumbles into an argument between Yuki and the Guard.
 # ============================================================
 
-[interaction: merchant_greeting | Travelling merchant near the east gate]
+[interaction: yuki_guard_argument | Yuki arguing with a guard at the gate]
 
-Merchant: Welcome, welcome! Looking for anything in particular?
-Merchant: I've got maps, dried goods, and a few... curiosities.
+Guard: Ma'am, the east path is closed after sundown. I've said it twice.
+Yuki: And I've told you — I left my bag on the bench. It will take thirty seconds.
+Guard: Rules are rules. Come back tomorrow.
 
-Merchant: What catches your eye?
+# Player arrives
+Akihiko: Hey, what's going on?
+Yuki: This guard won't let me through to get my bag.
+Guard: Sir, please stay back. This doesn't concern you.
 
-[choice]
-    > What kind of curiosities?  -> @merch_curious
-    > Tell me about the maps.    -> @merch_maps
-    > Just browsing, thanks.     -> @merch_bye
-
-@merch_curious
-Merchant: Ah, a person of taste!
-Merchant: I've got a compass that always points to your greatest regret.
-Merchant: Terrible for navigation. Wonderful for drama.
-Merchant: Interested?
+Akihiko: Can we work something out here?
 
 [choice]
-    > How much?   -> @merch_price
-    > No thanks.  -> @merch_bye
+    > Vouch for Yuki     -> @vouch
+    > Side with the guard -> @side_guard
+    > Stay out of it      -> @stay_out
 
-@merch_price
-Merchant: For you? Three silver.
-Merchant: Or one favour. I'll let you decide which is cheaper.
+@vouch
+Akihiko: I know her. She's not going to cause any trouble.
+Guard: ...
+Guard: Fine. Two minutes. And you're coming with her.
+Yuki: Thank you.
+Yuki(bgYukiClose): ...Both of you.
 [end]
 
-@merch_maps
-Merchant: Best maps this side of the river!
-Merchant: I've got the eastern districts, old town routes, even the underground canals.
-Merchant: The canal map's not strictly... legal to own. But that's between us.
+@side_guard
+Akihiko: He's got a point, Yuki. Come back in the morning.
+Yuki: Are you serious right now?
+Yuki(bgYukiClose): Fine. Don't talk to me tonight.
 [end]
 
-@merch_bye
-Merchant: No trouble at all. Come back anytime!
-Merchant: I'll be here until the lanterns go out.
+@stay_out
+Akihiko: Actually — yeah, none of my business. Carry on.
+Guard: Smart man.
+Yuki: Unbelievable.
 [end]

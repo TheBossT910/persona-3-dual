@@ -12,21 +12,20 @@ extern int demo_dialogue_bg_slot;
 
 void  demo_unload();  // stub: hide/free the slot
 
-// ── interaction: merchant_greeting — Travelling merchant near the east gate
-//    bgs (1): [0]=bgAkihiko
-extern const char*  demo_merchant_greeting_bg_names[1];
-extern void        (*demo_merchant_greeting_bg_loaders[1])();
-void  demo_merchant_greeting_load_bg(int bgIndex);
-extern dialogue demo_merchant_greeting_lines[14];
-void  demo_merchant_greeting_init();
-void  demo_merchant_greeting_load();    // stub: fill bg_loaders[], call _init()
-inline dialogue* demo_merchant_greeting_first() { return &demo_merchant_greeting_lines[0]; }
-inline dialogue* demo_merchant_greeting_merch_curious() { return &demo_merchant_greeting_lines[3]; }
-inline dialogue* demo_merchant_greeting_merch_price() { return &demo_merchant_greeting_lines[7]; }
-inline dialogue* demo_merchant_greeting_merch_maps() { return &demo_merchant_greeting_lines[9]; }
-inline dialogue* demo_merchant_greeting_merch_bye() { return &demo_merchant_greeting_lines[12]; }
+// ── interaction: yuki_guard_argument — Yuki arguing with a guard at the gate
+//    bgs (4): [0]=bgGuard, [1]=bgYuki, [2]=bgAkihiko, [3]=bgYukiClose
+extern const char*  demo_yuki_guard_argument_bg_names[4];
+extern void        (*demo_yuki_guard_argument_bg_loaders[4])();
+void  demo_yuki_guard_argument_load_bg(int bgIndex);
+extern dialogue demo_yuki_guard_argument_lines[18];
+void  demo_yuki_guard_argument_init();
+void  demo_yuki_guard_argument_load();    // stub: fill bg_loaders[], call _init()
+inline dialogue* demo_yuki_guard_argument_first() { return &demo_yuki_guard_argument_lines[0]; }
+inline dialogue* demo_yuki_guard_argument_vouch() { return &demo_yuki_guard_argument_lines[7]; }
+inline dialogue* demo_yuki_guard_argument_side_guard() { return &demo_yuki_guard_argument_lines[12]; }
+inline dialogue* demo_yuki_guard_argument_stay_out() { return &demo_yuki_guard_argument_lines[15]; }
 
 // Initialise every interaction's struct arrays (call after all _load()s).
 inline void demo_init_all() {
-    demo_merchant_greeting_init();
+    demo_yuki_guard_argument_init();
 }

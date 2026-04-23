@@ -129,9 +129,9 @@ ViewState IwatodaiDormView::Update() {
         if (playerCtrl->isTileAt() == TileType::CHARACTER_Akihiko) {
             iprintf("\x1b[0;0HPress A to talk");
             if (pressed & KEY_A) {
-                demo_merchant_greeting_load();
-                dialogueCtrl.setLoader(demo_merchant_greeting_load_bg);
-                dialogueCtrl.start(demo_merchant_greeting_first());
+                demo_yuki_guard_argument_load();
+                dialogueCtrl.setLoader(demo_yuki_guard_argument_load_bg);
+                dialogueCtrl.start(demo_yuki_guard_argument_first());
             }
         } else {
             consoleClear();
