@@ -114,6 +114,8 @@ class DialogueParser:
         pending_label: Optional[str] = None
         auto_idx = 0
         pending_jumps: list[tuple[int, str]] = []
+        dialogue_ends = {}
+        counter = 0
 
         def resolve_bg(char, override):
             if override:
@@ -170,6 +172,9 @@ class DialogueParser:
                 continue
 
             if s.lower() == "[end]":
+                dialogue_ends[counter - 1] = True
+                print("found [end] @  ")
+                print(counter - 1)
                 continue
 
             if m := re.match(r"^\[jump\s+@(\w+)\]$", s, re.IGNORECASE):
@@ -198,11 +203,12 @@ class DialogueParser:
                 continue
 
             if m := re.match(r"^([A-Za-z][A-Za-z0-9_ ]*)(?:\(([^)]+)\))?:\s*(.+)$", s):
+                counter = counter + 1
                 char = m.group(1).strip()
                 bg = resolve_bg(char, m.group(2))
                 add_line(char, m.group(3), bg)
                 continue
-
+            
             raise ParseError(n, f"Unrecognised syntax: '{s}'")
 
         # link prev/next
@@ -210,7 +216,9 @@ class DialogueParser:
         for i, dl in enumerate(lines):
             if i > 0:
                 dl.prev_index = i - 1
-            if not dl.selections and dl.next_index is None:
+            if (dialogue_ends.get(i) == True):
+                dl.next_index = None
+            elif not dl.selections and dl.next_index is None:
                 if i + 1 < len(lines):
                     dl.next_index = i + 1
 

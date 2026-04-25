@@ -6,7 +6,7 @@ source ~/.venv/bin/activate
 ---
 
 ## Convert .dlg to dialogue code
-python3 dlg2fialogue.py input.dlg
+python3 dlg2dialogue.py input.dlg
 
 ---
 
