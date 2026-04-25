@@ -136,6 +136,25 @@ class DialogueParser:
             lbl = f"line_{auto_idx}"
             auto_idx += 1
             return lbl
+        
+        def split_line(text):
+            tokens = text.split(" ")
+            currentLine = ""
+            finalLine = ""
+            
+            for token in tokens:
+                lineSize = len(currentLine) + len(token)
+                if (lineSize > 32):                    
+                    finalLine = finalLine + currentLine + (32 - len(currentLine))*" "
+                    currentLine = token + " "
+                else:
+                    currentLine = currentLine + token + " "
+            
+            finalLine = finalLine + currentLine
+            
+            if (len(finalLine) == 0):
+                return text
+            return finalLine
 
         def add_line(char, text, bg):
             nonlocal pending_label
@@ -145,8 +164,9 @@ class DialogueParser:
             if label in interaction.label_map:
                 raise ParseError(0, f"Duplicate label '@{label}' in '{interaction.name}'")
             bg_index = interaction.bg_order.index(bg)
+            text = split_line(text)
             dl = DialogueLine(index=idx, label=label, character=char,
-                              text=text, bg=bg, bg_index=bg_index)
+                              text=text, bg=bg, bg_index=bg_index)            
             interaction.lines.append(dl)
             interaction.label_map[label] = idx
             return dl
@@ -173,8 +193,6 @@ class DialogueParser:
 
             if s.lower() == "[end]":
                 dialogue_ends[counter - 1] = True
-                print("found [end] @  ")
-                print(counter - 1)
                 continue
 
             if m := re.match(r"^\[jump\s+@(\w+)\]$", s, re.IGNORECASE):
