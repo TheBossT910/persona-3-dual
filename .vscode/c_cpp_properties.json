@@ -12,6 +12,7 @@
                 "${DEVKITPRO}/libnds/include/**",
                 "${DEVKITPRO}/calico/include",
                 "${workspaceFolder}/build",
+                "${workspaceFolder}/source",
                 "${workspaceFolder}/source"
             ],
             "defines": [

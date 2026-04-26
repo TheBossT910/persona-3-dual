@@ -128,10 +128,12 @@ ifneq ($(strip $(NITRODATA)),)
 endif
 
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+CPPFILES    :=  $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 # Dialogue .cpp files are generated. Derive from source .dlg list so they're
 # known at parse time even on a clean build (wildcard would find nothing).
-CPPFILES	+=	$(notdir $(DLG_FILES:$(ASSETS_DIALOGUE)/%.dlg=%_dialogue.cpp))
+CPPFILES    +=  $(notdir $(DLG_FILES:$(ASSETS_DIALOGUE)/%.dlg=%_dialogue.cpp))
+# Remove duplicates if wildcard found already-generated files
+CPPFILES    :=  $(sort $(CPPFILES))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(notdir $(MODEL_OUT)) soundbank.bin
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))

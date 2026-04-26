@@ -2,6 +2,7 @@
 #include "core/View.h"
 #include "controllers/DialogueController.h"
 #include "controllers/CharacterController.h"
+#include "maps/iwatodaiDorm_256x256_offsets.h"
 
 // implementing from View
 class IwatodaiDormView : public View {
@@ -21,9 +22,12 @@ class IwatodaiDormView : public View {
             // camera pos
             cameraPosition camPos;
             // world
-            const float tileSize = 0.0625f;
-            const float worldOffsetX = 1.8125f;
-            const float worldOffsetZ = 1.6875f;
+            // const float tileSize = 0.0625f;
+            // const float worldOffsetX = 1.8125f;
+            // const float worldOffsetZ = 1.6875f;
+            const float tileSize = TILE_SIZE;
+            const float worldOffsetX = WORLD_OFFSET_X;
+            const float worldOffsetZ = WORLD_OFFSET_Z;
             const float characterRadius = 0.05f;
             // movement and viewpoint
             const float speed = 0.01f;
