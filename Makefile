@@ -130,7 +130,7 @@ endif
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin))) soundbank.bin
+BINFILES	:=	$(notdir $(MODEL_OUT)) soundbank.bin
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
 export SFXFILES	:=	$(foreach dir,$(notdir $(wildcard $(SFX)/*.*)),$(CURDIR)/$(SFX)/$(dir))
@@ -158,9 +158,16 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 .PHONY: $(BUILD) clean assets dialogue music video models maps offsets help
 
 #---------------------------------------------------------------------------------
-# Main build — asset conversion always runs first (DEFAULT TARGET)
+# Main build — DEFAULT TARGET
+#
+# WHY TWO MAKE INVOCATIONS:
+#   BINFILES/OFILES are expanded at parse time. If .bin files don't exist yet
+#   (e.g. after make clean), they won't appear in OFILES and the linker can't
+#   find them. Running assets in a separate $(MAKE) first ensures all .bin files
+#   are on disk before the ROM build process starts and re-evaluates the wildcard.
 #---------------------------------------------------------------------------------
-$(BUILD): assets
+$(BUILD):
+	@$(MAKE) --no-print-directory assets
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
