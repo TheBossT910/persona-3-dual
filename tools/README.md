@@ -1,99 +1,328 @@
-## Activate .venv
+# Persona 3 Dual — Asset Pipeline
 
-python3 -m venv ~/.venv
-source ~/.venv/bin/activate
+> Everything in `assets/` is source. Everything in `source/` or `nitrofiles/` is generated.  
+> **Never hand-edit generated files** — run `make assets` instead.
 
 ---
 
-## Convert .dlg to dialogue code
+## Quick Start
+
+```bash
+# First time only — set up venv
+python3 -m venv ~/.venv
+source ~/.venv/bin/activate
+pip install Pillow
+
+# Full build (assets + ROM)
+make
+
+# Asset conversion only
+make assets
+
+# One category at a time
+make dialogue
+make music
+make video
+make models
+make maps
+make offsets
+
+# See all targets and flags
+make help
+```
+
+---
+
+## Directory Layout
+
+```
+assets/
+  dialogue/       .dlg scripts          → source/dialogue/
+  music/          .mp3 music            → nitrofiles/music/
+  sfx/            .wav SFX              → soundbank.bin (via mmutil)
+  video/          .mp4 cutscenes        → nitrofiles/video/
+  models/         .obj 3D models        → assets/models/bin/
+  maps/           .png collision maps   → source/maps/
+
+source/
+  dialogue/       *_dialogue.h + .cpp   (auto-generated)
+  maps/           *.h collision arrays  (auto-generated)
+  maps/           *_offsets.h           (auto-generated TILE_SIZE defines)
+
+nitrofiles/
+  music/          *.pcm                 (auto-generated)
+  video/          *.vid                 (auto-generated)
+
+tools/
+  dlg2dialogue.py
+  obj2dl.py
+  obj2offsets.py
+  texture2collision.py
+  video2vid.py
+```
+
+---
+
+## Tools Reference
+
+---
+
+### `dlg2dialogue.py` — Dialogue compiler
+
+Compiles a `.dlg` scene script into a C++ header + source pair for `DialogueController`.
+
+| | |
+|---|---|
+| **Input** | `assets/dialogue/<name>.dlg` |
+| **Output** | `source/dialogue/<name>_dialogue.h` + `.cpp` |
+
+**Make flag**
+
+```makefile
+DLG_FLAGS='--stdout'   # dump to stdout instead of writing files (debug)
+```
+
+**Naming** — no special encoding needed. Just use the scene name:
+
+```
+assets/dialogue/dormitory.dlg   →   source/dialogue/dormitory_dialogue.h
+assets/dialogue/tartarus.dlg    →   source/dialogue/tartarus_dialogue.h
+```
+
 python3 dlg2dialogue.py input.dlg
 
 ---
 
-## Convert MP3 to .pcm (NDS format)
+### `ffmpeg` — Music converter (PCM)
+
+Converts MP3s to raw 16-bit stereo PCM at 32 kHz for `maxmod`.
+
+| | |
+|---|---|
+| **Input** | `assets/music/<name>.mp3` |
+| **Output** | `nitrofiles/music/<name>.pcm` |
+
+No special naming needed. Filenames carry over 1:1.
+
 ffmpeg -i input.mp3 -f s16le -ar 32000 -ac 2 output.pcm
 
 ---
 
-# video2vid - Convert videos to .vid (NDS format) - 
-python3 video2vid.py input.mp4 output --bits 8 --fps 15
-*This tool was AI generated*
+### `video2vid.py` — Video encoder
 
----
+Encodes MP4 video to an interleaved `.vid` file.
 
-## obj2bin - Convert 3D models into .bin display list data (NDS format)
-obj2dl.py *input* *output* --texsize *w* *h*
-- Converts a .obj file to .bin
-*This tool was AI generated*
+| | |
+|---|---|
+| **Input** | `assets/video/<name>.mp4` |
+| **Output** | `nitrofiles/video/<name>.vid` |
 
-python3 /Users/taharashid/Desktop/obj2bin.py /Users/taharashid/Desktop/Personal/Coding/nds_dev/models/iwatodai_dorm/iwatodai_dorm.obj uv.bin --texsize 256 256
+**Make flags**
 
-## convert_map - - Convert a 2D collision texture into .h collision data (NDS format)
-texture2collision.py *input* *output* [x y width height]
-- Converts a Blockbench texture PNG to a DS collision map C header file
-- Each pixel in the texture corresponds to one tile
-- Optionally crop a region of the texture using x, y, width, height
-*This tool was AI generated*
-
-python3 texture2collision.py /Users/taharashid/Desktop/texture.png output.h 0 0 64 64
-
----
-
-## Figuring Out World Offset and Tile Size
-
-When setting up collision, you need three values that describe how your .obj world maps to your tile grid:
-- `WORLD_OFFSET_X` / `WORLD_OFFSET_Z` — shifts the world so the minimum corner is at 0
-- `TILE_SIZE` — how many world units wide one tile is
-
-### Step 1 — Get the exact vertex bounds of your .obj
-
-Run this in terminal:
+| Flag | Default | Values |
+|---|---|---|
+| `VIDEO_BITS` | `8` | `8` (8-bpp palette) or `16` (BGR555) |
+| `VIDEO_FPS`  | `15` | any integer |
+| `VIDEO_SIZE` | `256x192` | `WxH` string |
 
 ```bash
-grep "^v " environment.obj | awk '{
-    if (NR==1) { minX=$2; maxX=$2; minZ=$4; maxZ=$4 }
-    if ($2 < minX) minX=$2; if ($2 > maxX) maxX=$2;
-    if ($4 < minZ) minZ=$4; if ($4 > maxZ) maxZ=$4;
-} END { print "X:", minX, "to", maxX, "| Z:", minZ, "to", maxZ }'
+make video VIDEO_FPS=24 VIDEO_BITS=16 VIDEO_SIZE=256x192
 ```
 
-Example output: `X: -2.0 to 2.0 | Z: -2.0 to 2.0`
+python3 video2vid.py input.mp4 output --bits 8 --fps 15
 
-### Step 2 — Calculate the values
+---
+
+### `obj2bin.py` — 3D model converter
+
+Converts a Wavefront `.obj` into a binary NDS display-list `.bin`.
+
+| | |
+|---|---|
+| **Input** | `assets/models/<name>[_WxH].obj` |
+| **Output** | `assets/models/<name>.bin` |
+
+**Filename encoding — texture size**
+
+Encode the texture dimensions directly in the filename using `_WxH`:
 
 ```
-world width  = maxX - minX        (e.g. 2.0 - (-2.0) = 4.0)
-world depth  = maxZ - minZ        (e.g. 2.0 - (-2.0) = 4.0)
-
-WORLD_OFFSET_X = -minX            (e.g. -(-2.0) = 2.0)
-WORLD_OFFSET_Z = -minZ            (e.g. -(-2.0) = 2.0)
-
-TILE_SIZE = world width / tile count   (e.g. 4.0 / 64 = 0.0625)
+dorm.obj            →  --texsize 256 256  (uses MODEL_TEXSIZE default)
+dorm_128x128.obj    →  --texsize 128 128
+pillar_64x64.obj    →  --texsize 64 64
+skybox_512x256.obj  →  --texsize 512 256
 ```
 
-The tile count is the pixel resolution of your painted collision map (e.g. 64 if you painted a 64x64 region).
+**Make flag — global fallback**
 
-### Step 3 — Paste into your C code
+```bash
+make models MODEL_TEXSIZE='128 128'   # default when no _WxH in filename
+```
+
+**Optional vertex color**
+
+Not in the Makefile rule (uncommon). Call manually if you need it:
+
+```bash
+python3 tools/obj2dl.py assets/models/floor.obj assets/models/floor.bin \
+  --texsize 256 256 --color 255 128 0
+```
+
+obj2bin.py *input* *output* --texsize *w* *h*
+
+---
+
+### `texture2collision.py` — Collision map converter
+
+Converts a PNG into a `uint8_t collision_map[H][W]` C header.
+
+| | |
+|---|---|
+| **Input** | `assets/maps/<name>[_X_Y_W_H].png` |
+| **Output** | `source/maps/<name>.h` |
+
+**Filename encoding — crop region**
+
+Encode the crop rectangle `(x, y, width, height)` as four underscore-separated integers **at the end** of the filename:
+
+```
+lobby.png              →  full image, no crop
+lobby_0_0_64_64.png    →  crop x=0, y=0, w=64, h=64
+tartarus_32_0_64_64.png→  crop x=32, y=0, w=64, h=64
+```
+
+**Make flag**
+
+```bash
+MAP_FLAGS='...'   # any extra flags passed to texture2collision.py
+```
+
+**Tile values** (edit `TILE_COLORS` in `texture2collision.py`):
+
+| Value | Meaning | Default color |
+|---|---|---|
+| `0` | Walkable | *(anything unrecognised)* |
+| `1` | Collision wall | RGB(197, 0, 0) |
+| `2` | Save point | RGB(197, 194, 0) |
+| `3` | Prev scene | RGB(0, 92, 197) |
+| `4` | Next scene | RGB(56, 197, 0) |
+| `100` | Character spawn | RGB(0, 197, 173) |
+
+texture2collision.py *input* *output* [x y width height]
+
+---
+
+### `obj2offsets.py` — World offset calculator
+
+Reads vertex bounds from a `.obj` and pixel dimensions from its paired collision map PNG, then emits the three C defines you need.
+
+| | |
+|---|---|
+| **Input** | `assets/models/<name>.obj`  +  `assets/maps/<name>.png` (auto-detected) |
+| **Output** | `source/maps/<name>_offsets.h` |
+
+**Auto-detection** — the tool looks for a PNG in `assets/maps/` whose base name matches the `.obj`. You don't need to specify it unless the names differ.
+
+**The generated header looks like:**
 
 ```c
-#define TILE_SIZE      0.0625f   // world width / tile count
-#define WORLD_OFFSET_X 2.0f     // -minX
-#define WORLD_OFFSET_Z 2.0f     // -minZ
+// Auto-generated by obj2offsets.py — do not edit by hand
+// OBJ:  dorm.obj
+// MAP:  dorm.png
+//
+// Vertex bounds:  X [-2.000000 → 2.000000]  Z [-2.000000 → 2.000000]
+// World size:     4.000000 × 4.000000
+// Tile grid:      64 × 64
+
+#ifndef DORM_OFFSETS_H
+#define DORM_OFFSETS_H
+
+#define TILE_SIZE      0.062500f  // world_width / tile_cols
+#define WORLD_OFFSET_X 2.000000f  // -minX
+#define WORLD_OFFSET_Z 2.000000f  // -minZ
+
+#endif
 ```
 
-### Step 4 — Verify in game
+**Include it in your scene's `.cpp`:**
 
-Add this debug print and walk around:
+```cpp
+#include "maps/dorm_offsets.h"
+
+// Then use directly:
+int tileX = (int)((charPos.x + WORLD_OFFSET_X) / TILE_SIZE);
+int tileZ = (int)((charPos.z + WORLD_OFFSET_Z) / TILE_SIZE);
+```
+
+**`make offsets`** runs this automatically for every `.obj` in `assets/models/`.
+
+**Manual usage** (when names differ or you want to specify the map explicitly):
+
+```bash
+# Auto-detect map
+python3 tools/obj2offsets.py assets/models/dorm.obj -o source/maps/dorm_offsets.h
+
+# Explicit map
+python3 tools/obj2offsets.py assets/models/dorm.obj \
+  --map assets/maps/dorm_0_0_64_64.png \
+  -o source/maps/dorm_offsets.h
+
+# Manual tile count (no map PNG)
+python3 tools/obj2offsets.py assets/models/dorm.obj --tiles 64 64
+
+# Print to stdout (no file written)
+python3 tools/obj2offsets.py assets/models/dorm.obj
+```
+
+---
+
+## Naming Convention Summary
+
+| Asset | Filename pattern | Encoded info |
+|---|---|---|
+| Dialogue | `<scene>.dlg` | — |
+| Music | `<name>.mp3` | — |
+| SFX | `<name>.mp3` | — |
+| Video | `<name>.mp4` | — |
+| Model | `<name>_<W>x<H>.obj` | tex size (optional, default = `MODEL_TEXSIZE`) |
+| Collision map | `<name>_<x>_<y>_<w>_<h>.png` | crop rect (optional, default = full image) |
+
+---
+
+## Incremental Builds
+
+Make tracks input → output dependencies. Re-running `make assets` only
+reconverts files whose source is **newer** than the output. To force a
+full reconvert:
+
+```bash
+make clean && make assets
+```
+
+To force a single category:
+
+```bash
+touch assets/video/intro.mp4 && make video
+```
+
+---
+
+## Verifying Collision In-Game
+
+After `make offsets`, include the generated header and add this debug block:
 
 ```c
-// print coordinates (64x64 area from 0,0 to 64,64)
-    iprintf("\x1b[21;0Htile(x,z): %d, %d",
-        (int)((charPos.x + worldOffsetX) / tileSize),
-        (int)((charPos.z + worldOffsetZ) / tileSize));
-    iprintf("\x1b[22;0Htranslate(x,z): %d, %d",
-        (int)(charPos.x * 100),
-        (int)(charPos.z * 100));
-    iprintf("\x1b[23;0Hangle(w,c): %d, %d", (int)(charPos.angle * 100), (int)(charPos.facingAngle * 100));
+#include "maps/dorm_offsets.h"
+
+// In your game loop:
+iprintf("\x1b[21;0Htile(x,z): %d, %d",
+    (int)((charPos.x + WORLD_OFFSET_X) / TILE_SIZE),
+    (int)((charPos.z + WORLD_OFFSET_Z) / TILE_SIZE));
+iprintf("\x1b[22;0Hpos(x,z):  %d, %d",
+    (int)(charPos.x * 100),
+    (int)(charPos.z * 100));
 ```
 
-Walking from one edge of the world to the other should show tiles going from `0` to `(tile count - 1)`. If the numbers are inverted or offset, the collision map orientation may need adjusting in convert_map.py (see flip/rotate options).
+Walking from one edge of the world to the other should show tile indices
+going from `0` to `(tile count − 1)`. If they're inverted, edit the
+`ROTATE_180` in `texture2collision.py`.
