@@ -19,7 +19,7 @@ include $(DEVKITARM)/ds_rules
 TARGET		:=	$(shell basename $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source source/views source/controllers source/core
-DATA		:=	assets/models
+DATA		:=	assets/models/bin
 INCLUDES	:=	include source
 GRAPHICS	:=	assets/graphics
 SFX       	:=  assets/sfx
@@ -40,6 +40,7 @@ ASSETS_DIALOGUE := $(CURDIR)/assets/dialogue
 ASSETS_MUSIC    := $(CURDIR)/assets/music
 ASSETS_VIDEO    := $(CURDIR)/assets/video
 ASSETS_MODELS   := $(CURDIR)/assets/models
+ASSETS_MODELS_BIN := $(CURDIR)/assets/models/bin
 ASSETS_MAPS     := $(CURDIR)/assets/maps
 
 NITRO_MUSIC     := $(CURDIR)/nitrofiles/music
@@ -77,7 +78,7 @@ MAP_FILES   := $(wildcard $(ASSETS_MAPS)/*.png)
 DIALOGUE_OUT := $(DLG_FILES:$(ASSETS_DIALOGUE)/%.dlg=$(CURDIR)/source/dialogue/%.h)
 MUSIC_OUT    := $(MP3_FILES:$(ASSETS_MUSIC)/%.mp3=$(NITRO_MUSIC)/%.pcm)
 VIDEO_OUT    := $(MP4_FILES:$(ASSETS_VIDEO)/%.mp4=$(NITRO_VIDEO)/%.vid)
-MODEL_OUT    := $(OBJ_FILES:$(ASSETS_MODELS)/%.obj=$(CURDIR)/assets/models/%.bin)
+MODEL_OUT    := $(OBJ_FILES:$(ASSETS_MODELS)/%.obj=$(ASSETS_MODELS_BIN)/%.bin)
 MAP_OUT      := $(MAP_FILES:$(ASSETS_MAPS)/%.png=$(CURDIR)/source/maps/%.h)
 OFFSET_OUT   := $(OBJ_FILES:$(ASSETS_MODELS)/%.obj=$(CURDIR)/source/maps/%_offsets.h)
 
@@ -129,7 +130,7 @@ endif
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*))) soundbank.bin
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin))) soundbank.bin
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
 export SFXFILES	:=	$(foreach dir,$(notdir $(wildcard $(SFX)/*.*)),$(CURDIR)/$(SFX)/$(dir))
@@ -201,6 +202,7 @@ assets: dirs dialogue music video models maps offsets
 dirs:
 	@mkdir -p $(CURDIR)/source/dialogue
 	@mkdir -p $(CURDIR)/source/maps
+	@mkdir -p $(ASSETS_MODELS_BIN)
 	@mkdir -p $(NITRO_MUSIC)
 	@mkdir -p $(NITRO_VIDEO)
 
@@ -208,7 +210,7 @@ dirs:
 # Input:   assets/dialogue/<name>.dlg
 # Output:  source/dialogue/<name>_dialogue.h  +  source/dialogue/<name>_dialogue.cpp
 # Flags:   DLG_FLAGS  (e.g. --stdout for debug)
-$(CURDIR)/source/dialogue/%.h: $(ASSETS_DIALOGUE)/%.dlg
+$(CURDIR)/source/dialogue/%.h: $(ASSETS_DIALOGUE)/%.dlg | dirs
 	@echo "  DLG   $(notdir $<)"
 	@cd $(CURDIR)/source/dialogue && \
 	    $(VENV_PYTHON) $(TOOLS_DIR)/dlg2dialogue.py $< -o $* $(DLG_FLAGS)
@@ -218,7 +220,7 @@ dialogue: $(DIALOGUE_OUT)
 # ── Music ─────────────────────────────────────────────────────────────────────
 # Input:   assets/music/<name>.mp3
 # Output:  nitrofiles/music/<name>.pcm   (s16le, 32 kHz, stereo)
-$(NITRO_MUSIC)/%.pcm: $(ASSETS_MUSIC)/%.mp3
+$(NITRO_MUSIC)/%.pcm: $(ASSETS_MUSIC)/%.mp3 | dirs
 	@echo "  PCM   $(notdir $<)"
 	@ffmpeg -i $< -f s16le -ar 32000 -ac 2 $@ -y -loglevel error
 
@@ -228,7 +230,7 @@ music: $(MUSIC_OUT)
 # Input:   assets/video/<name>.mp4
 # Output:  nitrofiles/video/<name>.vid   (interleaved audio+video)
 # Flags:   VIDEO_BITS, VIDEO_FPS, VIDEO_SIZE
-$(NITRO_VIDEO)/%.vid: $(ASSETS_VIDEO)/%.mp4
+$(NITRO_VIDEO)/%.vid: $(ASSETS_VIDEO)/%.mp4 | dirs
 	@echo "  VID   $(notdir $<)  [$(VIDEO_BITS)bpp @ $(VIDEO_FPS)fps $(VIDEO_SIZE)]"
 	@$(VENV_PYTHON) $(TOOLS_DIR)/video2vid.py $< $(basename $@) \
 		--bits $(VIDEO_BITS) --fps $(VIDEO_FPS) --size $(VIDEO_SIZE)
@@ -240,7 +242,7 @@ video: $(VIDEO_OUT)
 #          assets/models/<name>_128x128.obj   → --texsize 128 128  (from filename)
 #          assets/models/<name>_64x64.obj     → --texsize 64 64
 # Output:  assets/models/<name>.bin
-$(CURDIR)/assets/models/%.bin: $(ASSETS_MODELS)/%.obj
+$(ASSETS_MODELS_BIN)/%.bin: $(ASSETS_MODELS)/%.obj | dirs
 	@echo "  BIN   $(notdir $<)"
 	$(eval _ts := $(shell echo "$*" | grep -oE '[0-9]+x[0-9]+$$' | tr 'x' ' '))
 	$(eval _texsize := $(if $(_ts),$(_ts),$(MODEL_TEXSIZE)))
@@ -253,7 +255,7 @@ models: $(MODEL_OUT)
 #          assets/maps/<name>_X_Y_W_H.png    → crop x y w h  (e.g. lobby_0_0_64_64.png)
 # Output:  source/maps/<name>.h
 # Flags:   MAP_FLAGS
-$(CURDIR)/source/maps/%.h: $(ASSETS_MAPS)/%.png
+$(CURDIR)/source/maps/%.h: $(ASSETS_MAPS)/%.png | dirs
 	@echo "  MAP   $(notdir $<)"
 	$(eval _crop_raw := $(shell echo "$*" | grep -oE '(_[0-9]+){4}$$'))
 	$(eval _crop_args := $(if $(_crop_raw),$(shell echo "$(_crop_raw)" | tr -d '_' | \
@@ -273,7 +275,7 @@ maps: $(MAP_OUT)
 # Output:  source/maps/<name>_offsets.h
 # Note:    also accepts _WxH in the obj filename for the texsize hint (ignored here,
 #          the map PNG drives tile count).
-$(CURDIR)/source/maps/%_offsets.h: $(ASSETS_MODELS)/%.obj
+$(CURDIR)/source/maps/%_offsets.h: $(ASSETS_MODELS)/%.obj | dirs
 	@echo "  OFF   $(notdir $<)"
 	@$(VENV_PYTHON) $(TOOLS_DIR)/obj2offsets.py $< -o $@
 

@@ -83,7 +83,31 @@ def png_dimensions_raw(png_path: str) -> tuple[int, int]:
     return width, height
 
 
+def crop_from_filename(png_path: str):
+    """
+    Extract crop rect (x, y, w, h) encoded in the filename as _X_Y_W_H.
+    e.g. iwatodaiDorm_0_0_64_64.png -> (0, 0, 64, 64). Returns None if absent.
+    """
+    import re as _re
+    stem = os.path.splitext(os.path.basename(png_path))[0]
+    nums = _re.findall(r"_(\d+)", stem)
+    if len(nums) >= 4:
+        x, y, w, h = (int(n) for n in nums[-4:])
+        return x, y, w, h
+    return None
+
+
 def get_png_size(png_path: str) -> tuple[int, int]:
+    """
+    Return the effective tile grid size for a collision map PNG.
+    If the filename encodes a crop rect (_X_Y_W_H), return (w, h) from that
+    instead of the full image dimensions.
+    """
+    crop = crop_from_filename(png_path)
+    if crop:
+        _, _, w, h = crop
+        print(f"  Crop rect from filename: x={crop[0]}, y={crop[1]}, w={w}, h={h}")
+        return w, h
     if _HAS_PIL:
         return png_dimensions_pil(png_path)
     return png_dimensions_raw(png_path)
@@ -93,11 +117,10 @@ def find_map_for_obj(obj_path: str) -> str | None:
     """
     Search heuristic:
       1. assets/maps/<stem>.png
-      2. assets/maps/<stem>_*.png  (any crop-encoded variant)
+      2. assets/maps/<stem>_*.png  (any crop-encoded variant, sorted)
       3. Same directory as .obj, <stem>.png
     """
     stem = os.path.splitext(os.path.basename(obj_path))[0]
-    # Strip trailing _WxH if present (e.g. dorm_128x128 → dorm)
     import re
     stem_plain = re.sub(r"_[0-9]+x[0-9]+$", "", stem)
 
@@ -111,12 +134,10 @@ def find_map_for_obj(obj_path: str) -> str | None:
         d = os.path.normpath(d)
         if not os.path.isdir(d):
             continue
-        # Exact match first
         candidate = os.path.join(d, f"{stem_plain}.png")
         if os.path.isfile(candidate):
             return candidate
-        # Any PNG whose name starts with stem_plain
-        for name in os.listdir(d):
+        for name in sorted(os.listdir(d)):
             if name.startswith(stem_plain) and name.endswith(".png"):
                 return os.path.join(d, name)
 
