@@ -15,7 +15,7 @@
 // collision
 #include "IwatodaiDormCollision.h"
 // dialogue
-#include "demo_dialogue.h"
+#include "dialogue/demo_dialogue.h"
 
 // texture ID
 static int environmentTextureId;

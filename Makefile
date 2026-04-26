@@ -18,7 +18,7 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(shell basename $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source source/views source/controllers source/core
+SOURCES		:=	source source/views source/controllers source/core source/dialogue
 DATA		:=	assets/models/bin
 INCLUDES	:=	include source
 GRAPHICS	:=	assets/graphics
@@ -129,6 +129,9 @@ endif
 
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+# Dialogue .cpp files are generated. Derive from source .dlg list so they're
+# known at parse time even on a clean build (wildcard would find nothing).
+CPPFILES	+=	$(notdir $(DLG_FILES:$(ASSETS_DIALOGUE)/%.dlg=%_dialogue.cpp))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(notdir $(MODEL_OUT)) soundbank.bin
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
