@@ -1,0 +1,193 @@
+# ============================================================
+# park.dlg  —  Comprehensive example scene
+# One file = one scene/view (the park).
+# Each [interaction] is a separate dialogue graph.
+# ============================================================
+
+# Scene-wide background defaults.
+# Any character listed here gets this bg unless overridden locally.
+@bg Akihiko   bgAkihiko
+@bg Yuki      bgYuki
+@bg Hana      bgHana
+@bg Merchant  bgShop
+@bg Guard     bgGuard
+
+== Scene: Riverside Park ==
+
+
+# ============================================================
+# INTERACTION 1 — Simple NPC, no choices
+# Triggered when player walks up to the old man on the bench.
+# ============================================================
+
+[interaction: old_man | Old man sitting on the bench]
+
+OldMan(bgBench): Hm? A visitor. Haven't seen one of those in a while.
+OldMan(bgBench): This park used to be full of children, you know.
+OldMan(bgBench): Now it's just me and the pigeons.
+OldMan(bgBench): ...Anyway. Don't mind me. Enjoy the view.
+
+
+# ============================================================
+# INTERACTION 2 — Two characters, linear, bg switches mid-scene
+# Akihiko finds Yuki reading by the fountain.
+# ============================================================
+
+[interaction: akihiko_meets_yuki | Akihiko finds Yuki at the fountain]
+
+Akihiko: Hey — I thought that was you.
+Yuki: Oh. Akihiko. You're the last person I expected to see here.
+Akihiko: I could say the same. You actually left your room?
+Yuki: Ha ha. Very funny.
+
+# Background shifts to a closer shot of Yuki for emphasis
+Yuki(bgYukiClose): I come here to think. The noise back home is… a lot.
+Akihiko: Yeah. I get that.
+Akihiko: I won't bother you then. Just wanted to say hi.
+Yuki: ...You can stay. If you want.
+
+
+# ============================================================
+# INTERACTION 3 — Full branching dialogue with choices
+# Player talks to Hana; she asks for help and the player decides.
+# ============================================================
+
+[interaction: hana_request | Hana asks the player for a favour]
+
+Hana: Oh! You're here — perfect timing.
+Hana: I've been trying to figure out where the flower market moved to.
+Hana: I heard it's somewhere on the east side now, but I'm not sure.
+
+Hana: Could you help me track it down?
+
+[choice]
+    > Sure, I'll look into it.  -> @hana_agree
+    > Sorry, I'm busy right now -> @hana_decline
+    > What's it worth to you?  -> @hana_negotiate
+
+@hana_agree
+Hana: Really? Thank you so much!
+Hana: I need white peonies. The florist on Elm Street used to carry them.
+Hana: I'll be at the north gate if you find anything.
+[end]
+
+@hana_decline
+Hana: Oh… that's alright. I'll figure it out myself.
+Hana(bgHanaSad): I always do.
+[end]
+
+@hana_negotiate
+Hana: ...Ha. Direct. I like that.
+Hana: How about this — I'll make you lunch if you find the place.
+
+Hana: Deal?
+
+[choice]
+    > Deal.     -> @hana_deal_yes
+    > No thanks -> @hana_decline
+
+@hana_deal_yes
+Hana: Perfect. I make excellent tamagoyaki, just so you know.
+Hana: White peonies. North gate. Don't forget!
+[end]
+
+
+# ============================================================
+# INTERACTION 4 — Three-way conversation, multiple characters
+# The player stumbles into an argument between Yuki and the Guard.
+# ============================================================
+
+[interaction: yuki_guard_argument | Yuki arguing with a guard at the gate]
+
+Guard: Ma'am, the east path is closed after sundown. I've said it twice.
+Yuki: And I've told you — I left my bag on the bench. It will take thirty seconds.
+Guard: Rules are rules. Come back tomorrow.
+
+# Player arrives
+Akihiko: Hey, what's going on?
+Yuki: This guard won't let me through to get my bag.
+Guard: Sir, please stay back. This doesn't concern you.
+
+Akihiko: Can we work something out here?
+
+[choice]
+    > Vouch for Yuki     -> @vouch
+    > Side with the guard -> @side_guard
+    > Stay out of it      -> @stay_out
+
+@vouch
+Akihiko: I know her. She's not going to cause any trouble.
+Guard: ...
+Guard: Fine. Two minutes. And you're coming with her.
+Yuki: Thank you.
+Yuki(bgYukiClose): ...Both of you.
+[end]
+
+@side_guard
+Akihiko: He's got a point, Yuki. Come back in the morning.
+Yuki: Are you serious right now?
+Yuki(bgYukiClose): Fine. Don't talk to me tonight.
+[end]
+
+@stay_out
+Akihiko: Actually — yeah, none of my business. Carry on.
+Guard: Smart man.
+Yuki: Unbelievable.
+[end]
+
+
+# ============================================================
+# INTERACTION 5 — Merchant with looping/conditional shop flavour
+# A travelling merchant has a few things to say; ends with a jump.
+# ============================================================
+
+[interaction: merchant_greeting | Travelling merchant near the east gate]
+
+Merchant: Welcome, welcome! Looking for anything in particular?
+Merchant: I've got maps, dried goods, and a few… curiosities.
+
+Merchant: What catches your eye?
+
+[choice]
+    > What kind of curiosities?  -> @merch_curious
+    > Tell me about the maps.    -> @merch_maps
+    > Just browsing, thanks.     -> @merch_bye
+
+@merch_curious
+Merchant: Ah, a person of taste!
+Merchant(bgMerchantLean): I've got a compass that always points to your greatest regret.
+Merchant: Terrible for navigation. Wonderful for drama.
+Merchant: Interested?
+
+[choice]
+    > How much?   -> @merch_price
+    > No thanks.  -> @merch_bye
+
+@merch_price
+Merchant: For you? Three silver.
+Merchant: Or one favour. I'll let you decide which is cheaper.
+[end]
+
+@merch_maps
+Merchant: Best maps this side of the river!
+Merchant: I've got the eastern districts, old town routes, even the underground canals.
+Merchant: The canal map's not strictly… legal to own. But that's between us.
+[end]
+
+@merch_bye
+Merchant: No trouble at all. Come back anytime!
+Merchant: I'll be here until the lanterns go out.
+[end]
+
+
+# ============================================================
+# INTERACTION 6 — Brief sign / environmental dialogue
+# A notice board. No character name needed — use "Sign" or "Narrator".
+# ============================================================
+
+[interaction: notice_board | Wooden notice board near the fountain]
+
+Sign(bgBoard): [RIVERSIDE PARK — PUBLIC NOTICE]
+Sign(bgBoard): The east footpath will be closed for maintenance from sundown.
+Sign(bgBoard): Please use the north gate as an alternate route.
+Sign(bgBoard): Thank you for your cooperation. — Park Authority

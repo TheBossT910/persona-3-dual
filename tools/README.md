@@ -5,6 +5,11 @@ source ~/.venv/bin/activate
 
 ---
 
+## Convert .dlg to dialogue code
+python3 dlg2dialogue.py input.dlg
+
+---
+
 ## Convert MP3 to .pcm (NDS format)
 ffmpeg -i input.mp3 -f s16le -ar 32000 -ac 2 output.pcm
 

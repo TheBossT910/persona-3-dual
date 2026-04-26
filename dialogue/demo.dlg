@@ -1,0 +1,56 @@
+# ============================================================
+# park.dlg  —  Comprehensive example scene
+# One file = one scene/view (the park).
+# Each [interaction] is a separate dialogue graph.
+# ============================================================
+
+# Scene-wide background defaults.
+# Any character listed here gets this bg unless overridden locally.
+@bg Akihiko   bgAkihiko
+@bg Yuki      bgYuki
+@bg Guard     bgGuard
+
+== Scene: Riverside Park ==
+
+# ============================================================
+# INTERACTION 4 — Three-way conversation, multiple characters
+# The player stumbles into an argument between Yuki and the Guard.
+# ============================================================
+
+[interaction: yuki_guard_argument | Yuki arguing with a guard at the gate]
+
+Guard: Ma'am, the east path is closed after sundown. I've said it twice.
+Yuki: And I've told you - I left my bag on the bench. It will take thirty seconds.
+Guard: Rules are rules. Come back tomorrow.
+
+# Player arrives
+Akihiko: Hey, what's going on?
+Yuki: This guard won't let me through to get my bag.
+Guard: Sir, please stay back. This doesn't concern you.
+
+Akihiko: Can we work something out here?
+
+[choice]
+    > Vouch for Yuki     -> @vouch
+    > Side with the guard -> @side_guard
+    > Stay out of it      -> @stay_out
+
+@vouch
+Akihiko: I know her. She's not going to cause any trouble.
+Guard: ...
+Guard: Fine. Two minutes. And you're coming with her.
+Yuki: Thank you.
+Yuki(bgYukiClose): ...Both of you.
+[end]
+
+@side_guard
+Akihiko: He's got a point, Yuki. Come back in the morning.
+Yuki: Are you serious right now?
+Yuki(bgYukiClose): Fine. Don't talk to me tonight.
+[end]
+
+@stay_out
+Akihiko: Actually - yeah, none of my business. Carry on.
+Guard: Smart man.
+Yuki: Unbelievable.
+[end]
