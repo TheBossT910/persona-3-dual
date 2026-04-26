@@ -145,16 +145,13 @@ def find_map_for_obj(obj_path: str) -> str | None:
 
 
 def compute_offsets(min_x, max_x, min_z, max_z, tile_cols, tile_rows):
+    world_width = max_x - min_x
+    world_depth = max_z - min_z
     offset_x    = -min_x
     offset_z    = -min_z
-    
-    # Engine Scale Fixed Rule: 1.0 world unit = 16 collision tiles.
-    # We hardcode TILE_SIZE to 0.0625 (1/16). 
-    # Do NOT calculate this dynamically from the .obj bounds (world_width / tile_cols)
-    # because the physical 3D geometry rarely stretches all the way to the 
-    # logical boundaries of the padded 2D collision map canvas.
-    tile_size_w = 0.0625
-    tile_size_d = 0.0625
+    tile_size_w = world_width / tile_cols if tile_cols else 0.0
+    tile_size_d = world_depth / tile_rows if tile_rows else 0.0
+    # Use width axis for TILE_SIZE (square tiles assumed; warn if asymmetric)
     
     return offset_x, offset_z, tile_size_w, tile_size_d
 
@@ -174,7 +171,7 @@ def format_header(scene: str, offset_x, offset_z, tile_size, obj_path, map_path,
         f"#ifndef {guard}",
         f"#define {guard}",
         f"",
-        f"#define TILE_SIZE      {tile_size:.6f}f  // Fixed scale: 1 unit = 16 tiles",
+        f"#define TILE_SIZE      {tile_size:.6f}f  // world_width / tile_cols",
         f"#define WORLD_OFFSET_X {offset_x:.6f}f  // -minX",
         f"#define WORLD_OFFSET_Z {offset_z:.6f}f  // -minZ",
         f"",
