@@ -41,10 +41,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
-# ──────────────────────────────────────────────────────────────
 # Data model
-# ──────────────────────────────────────────────────────────────
-
 MAX_BG_SLOTS = 4   # DS hardware limit — warn above this
 
 @dataclass
@@ -75,10 +72,7 @@ class Interaction:
     bg_order: list[str] = field(default_factory=list)   # ordered unique bg names
 
 
-# ──────────────────────────────────────────────────────────────
 # Parser
-# ──────────────────────────────────────────────────────────────
-
 class ParseError(Exception):
     def __init__(self, line_num: int, msg: str):
         super().__init__(f"Line {line_num}: {msg}")
@@ -270,10 +264,7 @@ class DialogueParser:
         return self.interactions
 
 
-# ──────────────────────────────────────────────────────────────
 # Code generator
-# ──────────────────────────────────────────────────────────────
-
 class CodeGenerator:
 
     def __init__(self, interactions: list[Interaction], scene_name: str):
@@ -496,9 +487,7 @@ class CodeGenerator:
         return "\n".join(out)
 
 
-# ──────────────────────────────────────────────────────────────
 # CLI
-# ──────────────────────────────────────────────────────────────
 
 def main():
     ap = argparse.ArgumentParser(
@@ -532,7 +521,7 @@ def main():
         print("WARNING: No [interaction] blocks found.", file=sys.stderr)
         sys.exit(0)
 
-    # ── bg count warnings ─────────────────────────────────────
+    # bg count warnings
     warnings = []
     for ia in interactions:
         nb = len(ia.bg_order)

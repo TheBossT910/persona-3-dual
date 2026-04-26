@@ -6,15 +6,16 @@
 
 // assets
 // 3D models
-#include "environment_bin.h"
-#include "character_bin.h"
+#include "iwatodaiDorm_256x256_bin.h"
+#include "character_16x16_bin.h"
+
 // textures
 #include "character.h"
 #include "environment.h"
 // collision
 #include "IwatodaiDormCollision.h"
 // dialogue
-#include "demo_dialogue.h"
+#include "dialogue/demo_dialogue.h"
 
 // texture ID
 static int environmentTextureId;
@@ -23,13 +24,13 @@ static int characterTextureId;
 void DrawEnvironmentModel() {
     // bind texture before drawing
     glBindTexture(GL_TEXTURE_2D, environmentTextureId);
-    glCallList((u32*)environment_bin);
+    glCallList((u32*)iwatodaiDorm_256x256_bin);
 }
 
 void DrawPlayerModel() {
     // bind texture before drawing
     glBindTexture(GL_TEXTURE_2D, characterTextureId);
-    glCallList((u32*)character_bin);
+    glCallList((u32*)character_16x16_bin);
 }
 
 void IwatodaiDormView::Init() {

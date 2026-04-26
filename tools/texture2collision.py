@@ -23,7 +23,7 @@ except ImportError:
     sys.exit(1)
 
 
-# ─── Tile color definitions ───────────────────────────────────────────────────
+# Tile color definitions 
 # Edit these to match the colors you painted in Blockbench.
 # Format: (R, G, B): tile_value
 TILE_COLORS = {
@@ -43,7 +43,7 @@ TILE_COLORS = {
 }
 DEFAULT_TILE = 0           # Any unrecognised color = walkable
 COLOR_TOLERANCE = 10       # How close a color needs to be to match (0 = exact)
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 
 
 def color_matches(pixel, target, tolerance):

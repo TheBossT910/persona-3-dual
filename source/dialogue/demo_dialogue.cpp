@@ -8,9 +8,9 @@
 int demo_dialogue_bg_slot = 0;
 
 // ── BG imports ──────────────────────────────────────────────────────
-#include "bgGuard.h"
 #include "bgAkihiko.h"
 #include "bgYuki.h"
+#include "bgGuard.h"
 #include "bgYukiClose.h"
 
 void demo_unload() {
