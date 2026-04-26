@@ -25,7 +25,7 @@ import os
 import struct
 import sys
 
-# ── Optional PIL for PNG size ──────────────────────────────────────────────────
+# Optional PIL for PNG size 
 try:
     from PIL import Image as _PIL_Image
     _HAS_PIL = True
@@ -33,7 +33,7 @@ except ImportError:
     _HAS_PIL = False
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# Helpers 
 
 def get_obj_bounds(obj_path: str) -> tuple[float, float, float, float]:
     """Return (minX, maxX, minZ, maxZ) from the vertex list of a .obj file."""
@@ -185,7 +185,7 @@ def format_header(scene: str, offset_x, offset_z, tile_size, obj_path, map_path,
     return "\n".join(lines) + "\n"
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI 
 
 def main():
     ap = argparse.ArgumentParser(
@@ -206,7 +206,7 @@ def main():
         print(f"ERROR: OBJ not found: '{args.obj}'", file=sys.stderr)
         sys.exit(1)
 
-    # ── Determine tile count ───────────────────────────────────────────────────
+    # Determine tile count 
     map_path   = None
     tile_cols  = None
     tile_rows  = None
@@ -237,11 +237,11 @@ def main():
                 print("ERROR: Invalid tile count.", file=sys.stderr)
                 sys.exit(1)
 
-    # ── Read OBJ bounds ───────────────────────────────────────────────────────
+    # Read OBJ bounds 
     min_x, max_x, min_z, max_z = get_obj_bounds(args.obj)
     print(f"  OBJ bounds: X [{min_x:.4f} → {max_x:.4f}]  Z [{min_z:.4f} → {max_z:.4f}]")
 
-    # ── Compute ────────────────────────────────────────────────────────────────
+    # Compute 
     offset_x, offset_z, tile_size_w, tile_size_d = compute_offsets(
         min_x, max_x, min_z, max_z, tile_cols, tile_rows
     )
@@ -257,12 +257,12 @@ def main():
 
     tile_size = tile_size_w  # canonical value
 
-    # ── Scene name ────────────────────────────────────────────────────────────
+    # Scene name 
     import re
     stem  = os.path.splitext(os.path.basename(args.obj))[0]
     scene = re.sub(r"[^A-Za-z0-9_]", "_", re.sub(r"_[0-9]+x[0-9]+$", "", stem)).lower()
 
-    # ── Output ────────────────────────────────────────────────────────────────
+    # Output 
     header = format_header(
         scene, offset_x, offset_z, tile_size,
         args.obj, map_path,

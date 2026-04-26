@@ -207,7 +207,7 @@ help:
 	@echo ""
 
 #---------------------------------------------------------------------------------
-# Asset conversion — create output dirs, then run each converter
+# Asset conversion - create output dirs, then run each converter
 #---------------------------------------------------------------------------------
 assets: dirs dialogue music video models maps offsets
 
@@ -218,10 +218,12 @@ dirs:
 	@mkdir -p $(NITRO_MUSIC)
 	@mkdir -p $(NITRO_VIDEO)
 
-# ── Dialogue ──────────────────────────────────────────────────────────────────
+#---------------------------------------------------------------------------------
+# Dialogue
 # Input:   assets/dialogue/<name>.dlg
 # Output:  source/dialogue/<name>_dialogue.h  +  source/dialogue/<name>_dialogue.cpp
 # Flags:   DLG_FLAGS  (e.g. --stdout for debug)
+#---------------------------------------------------------------------------------
 $(CURDIR)/source/dialogue/%.h: $(ASSETS_DIALOGUE)/%.dlg | dirs
 	@echo "  DLG   $(notdir $<)"
 	@cd $(CURDIR)/source/dialogue && \
@@ -229,19 +231,23 @@ $(CURDIR)/source/dialogue/%.h: $(ASSETS_DIALOGUE)/%.dlg | dirs
 
 dialogue: $(DIALOGUE_OUT)
 
-# ── Music ─────────────────────────────────────────────────────────────────────
+#---------------------------------------------------------------------------------
+# Music
 # Input:   assets/music/<name>.mp3
 # Output:  nitrofiles/music/<name>.pcm   (s16le, 32 kHz, stereo)
+#---------------------------------------------------------------------------------
 $(NITRO_MUSIC)/%.pcm: $(ASSETS_MUSIC)/%.mp3 | dirs
 	@echo "  PCM   $(notdir $<)"
 	@ffmpeg -i $< -f s16le -ar 32000 -ac 2 $@ -y -loglevel error
 
 music: $(MUSIC_OUT)
 
-# ── Video ─────────────────────────────────────────────────────────────────────
+#---------------------------------------------------------------------------------
+# Video
 # Input:   assets/video/<name>.mp4
 # Output:  nitrofiles/video/<name>.vid   (interleaved audio+video)
 # Flags:   VIDEO_BITS, VIDEO_FPS, VIDEO_SIZE
+#---------------------------------------------------------------------------------
 $(NITRO_VIDEO)/%.vid: $(ASSETS_VIDEO)/%.mp4 | dirs
 	@echo "  VID   $(notdir $<)  [$(VIDEO_BITS)bpp @ $(VIDEO_FPS)fps $(VIDEO_SIZE)]"
 	@$(VENV_PYTHON) $(TOOLS_DIR)/video2vid.py $< $(basename $@) \
@@ -249,11 +255,13 @@ $(NITRO_VIDEO)/%.vid: $(ASSETS_VIDEO)/%.mp4 | dirs
 
 video: $(VIDEO_OUT)
 
-# ── Models ────────────────────────────────────────────────────────────────────
+#---------------------------------------------------------------------------------
+# Models
 # Input:   assets/models/<name>.obj           → --texsize 256 256  (MODEL_TEXSIZE)
 #          assets/models/<name>_128x128.obj   → --texsize 128 128  (from filename)
 #          assets/models/<name>_64x64.obj     → --texsize 64 64
 # Output:  assets/models/<name>.bin
+#---------------------------------------------------------------------------------
 $(ASSETS_MODELS_BIN)/%.bin: $(ASSETS_MODELS)/%.obj | dirs
 	@echo "  BIN   $(notdir $<)"
 	$(eval _ts := $(shell echo "$*" | grep -oE '[0-9]+x[0-9]+$$' | tr 'x' ' '))
@@ -262,11 +270,13 @@ $(ASSETS_MODELS_BIN)/%.bin: $(ASSETS_MODELS)/%.obj | dirs
 
 models: $(MODEL_OUT)
 
-# ── Collision maps ────────────────────────────────────────────────────────────
+#---------------------------------------------------------------------------------
+# Collision maps
 # Input:   assets/maps/<name>.png            → no crop
 #          assets/maps/<name>_X_Y_W_H.png    → crop x y w h  (e.g. lobby_0_0_64_64.png)
 # Output:  source/maps/<name>.h
 # Flags:   MAP_FLAGS
+#---------------------------------------------------------------------------------
 $(CURDIR)/source/maps/%.h: $(ASSETS_MAPS)/%.png | dirs
 	@echo "  MAP   $(notdir $<)"
 	$(eval _crop_raw := $(shell echo "$*" | grep -oE '(_[0-9]+){4}$$'))
@@ -281,12 +291,14 @@ $(CURDIR)/source/maps/%.h: $(ASSETS_MAPS)/%.png | dirs
 
 maps: $(MAP_OUT)
 
-# ── World offsets (auto TILE_SIZE / WORLD_OFFSET) ────────────────────────────
+#---------------------------------------------------------------------------------
+# World offsets (auto TILE_SIZE / WORLD_OFFSET)
 # Input:   assets/models/<name>.obj   (reads vertex bounds)
 #          assets/maps/<name>.png     (auto-detected for tile count)
 # Output:  source/maps/<name>_offsets.h
 # Note:    also accepts _WxH in the obj filename for the texsize hint (ignored here,
 #          the map PNG drives tile count).
+#---------------------------------------------------------------------------------
 $(CURDIR)/source/maps/%_offsets.h: $(ASSETS_MODELS)/%.obj | dirs
 	@echo "  OFF   $(notdir $<)"
 	@$(VENV_PYTHON) $(TOOLS_DIR)/obj2offsets.py $< -o $@
