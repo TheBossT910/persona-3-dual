@@ -19,10 +19,10 @@ include $(DEVKITARM)/ds_rules
 TARGET		:=	$(shell basename $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source source/views source/controllers source/core
-DATA		:=	data
+DATA		:=	assets/models
 INCLUDES	:=	include source
-GRAPHICS	:=	graphics
-SFX       	:=  sfx
+GRAPHICS	:=	assets/graphics
+SFX       	:=  assets/sfx
 NITRODATA   :=  nitrofiles
 
 GAME_TITLE	   := Persona 3 Dual
