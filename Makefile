@@ -312,6 +312,7 @@ clean:
 	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).nds $(TARGET).ds.gba
 	@rm -f  $(DIALOGUE_OUT) \
 	        $(CURDIR)/source/dialogue/*_dialogue.cpp \
+			$(CURDIR)/source/dialogue/*_dialogue.h \
 	        $(MUSIC_OUT) \
 	        $(VIDEO_OUT) \
 	        $(MODEL_OUT) \
