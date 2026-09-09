@@ -1,17 +1,17 @@
 {
+    "version": 4,
     "configurations": [
         {
-            "name": "BlocksDS NDS",
-            "compilerPath": "${ARM_GCC}/bin/arm-none-eabi-g++",
-            "intelliSenseMode": "gcc-arm",
+            "name": "CMake Project",
+            "compileCommands": "${workspaceFolder}/out/build/host-debug/compile_commands.json",
+            "intelliSenseMode": "${default}",
             "forcedInclude": [
                 "${workspaceFolder}/include/vscode_fix.hpp"
             ],
             "includePath": [
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/source/**",
-                "${workspaceFolder}/build",
-                "${workspaceFolder}/libs/aegis_engine/include**",
+                "${workspaceFolder}/libs/aegis_engine/include/**",
                 "${workspaceFolder}/libs/aegis_engine/libs/**",
                 "${env:ARM_GCC}/arm-none-eabi/include/**",
                 "${env:BLOCKSDSLIBS}/dswifi/include/**",
@@ -29,6 +29,5 @@
             "cStandard": "c11",
             "cppStandard": "c++17"
         }
-    ],
-    "version": 4
+    ]
 }

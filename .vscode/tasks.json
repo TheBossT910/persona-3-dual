@@ -1,25 +1,150 @@
-// See https://go.microsoft.com/fwlink/?LinkId=733558
-// for the documentation about the tasks.json format
 {
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "make debug",
-            "type": "process",
-            "command": "make",
-            "args": [
-                "DEBUG=1"
+            "label": "CMake: Configure (Host Debug)",
+            "type": "shell",
+            "command": "cmake --preset host-debug",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "CMake: Configure (Host Assets)",
+            "type": "shell",
+            "command": "cmake --preset host-assets",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Configure (NDS Release)",
+            "type": "shell",
+            "command": "cmake --preset nds-release",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Configure (NDS Debug)",
+            "type": "shell",
+            "command": "cmake --preset nds-debug-sdcard",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Build (Host Tests)",
+            "type": "shell",
+            "command": "cmake --build --preset build-host-tests",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": [
+                "CMake: Configure (Host Debug)"
             ],
             "problemMatcher": [
                 "$gcc"
             ]
         },
         {
-            "label": "clean",
-            "type": "process",
-            "command": "make",
-            "args": [
-                "clean"
+            "label": "CMake: Build (Assets)",
+            "type": "shell",
+            "command": "cmake --build --preset build-assets",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": [
+                "CMake: Configure (Host Assets)"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Build (NDS SDCard)",
+            "type": "shell",
+            "command": "cmake --build --preset build-nds-sdcard --parallel",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Build (NDS Debug SDCard)",
+            "type": "shell",
+            "command": "cmake --build --preset build-nds-debug-sdcard --parallel",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "CMake: Test (Host)",
+            "type": "shell",
+            "command": "ctest --preset test-host",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": "test"
+        },
+        {
+            "label": "CMake: Clean (NDS Debug)",
+            "type": "shell",
+            "command": "if [ -d out/build/nds-debug-sdcard ]; then cmake --build out/build/nds-debug-sdcard --target clean; else echo 'Skipping NDS Debug clean: build directory does not exist'; fi",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Clean (NDS Release)",
+            "type": "shell",
+            "command": "if [ -d out/build/nds-release ]; then cmake --build out/build/nds-release --target clean; else echo 'Skipping NDS Release clean: build directory does not exist'; fi",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Clean (Host Debug)",
+            "type": "shell",
+            "command": "if [ -d out/build/host-debug ]; then cmake --build out/build/host-debug --target clean; else echo 'Skipping Host Debug clean: build directory does not exist'; fi",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Clean Assets",
+            "type": "shell",
+            "command": "cmake -DP3D_SOURCE_DIR=\"${workspaceFolder}\" -P cmake/CleanAssets.cmake",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Clean (All)",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "CMake: Clean Assets",
+                "CMake: Clean (Host Debug)",
+                "CMake: Clean (NDS Debug)",
+                "CMake: Clean (NDS Release)"
             ],
             "problemMatcher": []
         }

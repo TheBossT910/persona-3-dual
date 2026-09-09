@@ -1,17 +1,18 @@
 {
-    // Search and UI cleanup
     "files.exclude": {
         "**/.git": true,
         "**/.DS_Store": true,
         "build/": true,
+        "out/": true,
         "*.elf": true,
         "*.nds": true,
         "*.map": true,
         "**/*.d": true,
-        "**/*.o": true,
+        "**/*.o": true
     },
     "search.exclude": {
         "**/build": true,
+        "**/out": true,
         "**/data": true,
         "**/*.d": true
     },
@@ -26,4 +27,6 @@
     "C_Cpp.intelliSenseEngine": "default",
     "C_Cpp.formatting": "default",
     "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/out/build/host-debug/compile_commands.json",
+    "cmake.configureOnOpen": true
 }

@@ -5,8 +5,7 @@
             "name": "[Docker] (gdb) Connect to melonDS",
             "type": "cppdbg",
             "request": "launch",
-            // NOTE: this SHOULD BE the same as the target in the Makefile.
-            "program": "${workspaceFolder}/build/persona-3-dual.elf",
+            "program": "${workspaceFolder}/out/build/nds-debug-sdcard/persona-3-dual.elf",
             "targetArchitecture": "arm",
             "serverLaunchTimeout": 10000,
             "stopAtEntry": true,
@@ -30,7 +29,7 @@
                     "ignoreFailures": false
                 },
                 {
-                    "text": "symbol-file \"${workspaceFolder}/build/persona-3-dual.elf\"",
+                    "text": "symbol-file \"${workspaceFolder}/out/build/nds-debug-sdcard/persona-3-dual.elf\"",
                     "description": "Force load symbols",
                     "ignoreFailures": false
                 },
