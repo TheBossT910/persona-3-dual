@@ -125,7 +125,7 @@ void IwatodaiDormView::setupText()
 void IwatodaiDormView::setupUI()
 {
     // setup pause menu
-    pauseMenuCmpt = PauseMenuComponent::getInstance();
+    pauseMenuCmpt = PauseMenu::getInstance();
 
     menuHUDScreen = MenuHUDScreen::getInstance();
     dialogueScreen = DialogueScreen::getInstance();

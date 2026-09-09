@@ -122,8 +122,8 @@ void IwatodaiStreetsView::setupUI()
 {
     textSub->configureText(TextConfig(textVideoBufferSub, &fontName, fontSize));
 
-    battleMenuCmpt = BattleMenuComponent::getInstance();
-    pauseMenuCmpt = PauseMenuComponent::getInstance();
+    battleMenuCmpt = BattleMenu::getInstance();
+    pauseMenuCmpt = PauseMenu::getInstance();
 
     menuHUDScreen = MenuHUDScreen::getInstance();
 

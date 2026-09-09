@@ -66,7 +66,7 @@ void StationView::setupUI()
 {
     textSub->configureText(TextConfig(textVideoBufferSub, &fontName, fontSize));
 
-    pauseMenuCmpt = PauseMenuComponent::getInstance();
+    pauseMenuCmpt = PauseMenu::getInstance();
 
     menuHUDScreen = MenuHUDScreen::getInstance();
 

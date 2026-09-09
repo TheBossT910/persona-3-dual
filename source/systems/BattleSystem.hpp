@@ -12,7 +12,7 @@
 #include "events/GenericEvents.hpp"
 #include <aegis/system.hpp>
 
-#include "components/menus/BattleMenuComponent.hpp"
+#include "components/menus/BattleMenu.hpp"
 #include "controllers/MusicController.hpp"
 
 #include <algorithm>
@@ -236,5 +236,5 @@ class BattleSystem : public ae::SystemRouter<BattleSystem, Event::ExecuteBattle>
     }
 
     MusicController* musicCtrl = nullptr;
-    BattleMenuComponent* battleMenuCmpt = nullptr;
+    BattleMenu* battleMenuCmpt = nullptr;
 };

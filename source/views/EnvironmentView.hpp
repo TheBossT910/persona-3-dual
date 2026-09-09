@@ -12,8 +12,8 @@
 #include "components/DialogueComponent.hpp"
 #include "components/GraphicsComponent.hpp"
 #include "components/MovementComponent.hpp"
-#include "components/menus/BattleMenuComponent.hpp"
-#include "components/menus/PauseMenuComponent.hpp"
+#include "components/menus/BattleMenu.hpp"
+#include "components/menus/PauseMenu.hpp"
 #include "components/screens/DialogueScreen.hpp"
 #include "components/screens/MenuHUDScreen.hpp"
 // controllers
@@ -160,8 +160,8 @@ class EnvironmentView : public BaseView
     DialogueScreen* dialogueScreen = nullptr;
     MenuHUDScreen* menuHUDScreen = nullptr;
 
-    BattleMenuComponent* battleMenuCmpt = nullptr;
-    PauseMenuComponent* pauseMenuCmpt = nullptr;
+    BattleMenu* battleMenuCmpt = nullptr;
+    PauseMenu* pauseMenuCmpt = nullptr;
 
     std::array<int, 2> bgMain;
     std::array<int, 3> bgSub;

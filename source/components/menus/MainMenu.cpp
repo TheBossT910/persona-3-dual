@@ -1,20 +1,20 @@
-#include "MainMenuComponent.hpp"
+#include "MainMenu.hpp"
 #include "core/globals.hpp"
 #include "events/GenericEvents.hpp"
 #include "events/SaveEvents.hpp"
 #include <string>
 
-MainMenuComponent* MainMenuComponent::instance = nullptr;
+MainMenu* MainMenu::instance = nullptr;
 
-void MainMenuComponent::create()
+void MainMenu::create()
 {
     if (instance == nullptr)
     {
-        instance = new MainMenuComponent();
+        instance = new MainMenu();
     }
 }
 
-void MainMenuComponent::destroy()
+void MainMenu::destroy()
 {
     if (instance != nullptr)
     {
@@ -23,7 +23,7 @@ void MainMenuComponent::destroy()
     instance = nullptr;
 }
 
-MainMenuComponent* MainMenuComponent::getInstance()
+MainMenu* MainMenu::getInstance()
 {
     if (instance == nullptr)
     {
@@ -32,20 +32,20 @@ MainMenuComponent* MainMenuComponent::getInstance()
     return instance;
 }
 
-void MainMenuComponent::resetHook()
+void MainMenu::resetHook()
 {
     pauseMessage = "";
     options = mainMenuOptions;
 }
 
-void MainMenuComponent::closeHook()
+void MainMenu::closeHook()
 {
     resetMenu();
     ae::BroadcastEvent(Event::SwitchView{ViewState::INTRO});
 }
 
 // option handlers
-ViewState MainMenuComponent::mainMenuOptionSelected()
+ViewState MainMenu::mainMenuOptionSelected()
 {
     ViewState selectedView;
     switch (static_cast<MainMenuOptions>(selectedOption))
@@ -68,7 +68,7 @@ ViewState MainMenuComponent::mainMenuOptionSelected()
     return selectedView;
 }
 
-ViewState MainMenuComponent::levelOptionSelected()
+ViewState MainMenu::levelOptionSelected()
 {
     ViewState selectedView;
     switch (static_cast<LevelOptions>(selectedOption))
@@ -98,7 +98,7 @@ ViewState MainMenuComponent::levelOptionSelected()
     return selectedView;
 }
 
-ViewState MainMenuComponent::settingOptionSelected()
+ViewState MainMenu::settingOptionSelected()
 {
     ViewState selectedView;
     switch (static_cast<SettingOptions>(selectedOption))
@@ -115,7 +115,7 @@ ViewState MainMenuComponent::settingOptionSelected()
     return selectedView;
 }
 
-ViewState MainMenuComponent::settingIntroOptionSelected()
+ViewState MainMenu::settingIntroOptionSelected()
 {
     switch (static_cast<SettingIntroOptions>(selectedOption))
     {
@@ -139,7 +139,7 @@ ViewState MainMenuComponent::settingIntroOptionSelected()
     return ViewState::KEEP_CURRENT;
 }
 
-void MainMenuComponent::updateSave()
+void MainMenu::updateSave()
 {
     ae::BroadcastEvent(Event::WriteSave{});
 }

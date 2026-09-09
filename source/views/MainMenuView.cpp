@@ -57,7 +57,7 @@ void MainMenuView::init()
     textMenu->configureText(TextConfig(textVideoBufferSub, &FONT_NAME, FONT_SIZE));
 
     // setup main menu
-    mainMenuCmpt = MainMenuComponent::getInstance();
+    mainMenuCmpt = MainMenu::getInstance();
     std::array<UIMenu*, 10> menus = {mainMenuCmpt};
     ae::BroadcastEvent(Event::ConfigureUIMenu{textMenu, menus});
     ae::BroadcastEvent(Event::ShowMenu{mainMenuCmpt});

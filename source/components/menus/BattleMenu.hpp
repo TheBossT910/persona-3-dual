@@ -21,13 +21,13 @@ enum class BattleMenuOptions
     ALERT
 };
 
-class BattleMenuComponent : public UIMenu
+class BattleMenu : public UIMenu
 {
   private:
     friend class BattleSystem;
-    BattleMenuComponent() {};
-    virtual ~BattleMenuComponent() = default;
-    static BattleMenuComponent* instance;
+    BattleMenu() {};
+    virtual ~BattleMenu() = default;
+    static BattleMenu* instance;
 
     BattleMenuOptions loadedOption = BattleMenuOptions::NONE;
     int selectedBattleOption = -1;
@@ -48,7 +48,7 @@ class BattleMenuComponent : public UIMenu
   public:
     static void create();
     static void destroy();
-    static BattleMenuComponent* getInstance();
+    static BattleMenu* getInstance();
 
     ViewState updateHook() override;
     void prevOption() override;

@@ -10,7 +10,7 @@ void BattleSystem::on_receive(const Event::ExecuteBattle& msg)
 {
     isActive = true;
     musicCtrl = MusicController::getInstance();
-    battleMenuCmpt = BattleMenuComponent::getInstance();
+    battleMenuCmpt = BattleMenu::getInstance();
 
     std::string path = fatBasePath + "music/battle/" + "mass_destruction.pcm";
     musicCtrl->init(path.c_str(), ae::q20_12_t{0}, ae::q20_12_t{-1});

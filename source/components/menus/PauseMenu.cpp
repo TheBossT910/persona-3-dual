@@ -1,4 +1,4 @@
-#include "PauseMenuComponent.hpp"
+#include "PauseMenu.hpp"
 #include "core/globals.hpp"
 #include <nds.h>
 #include <string>
@@ -8,17 +8,17 @@
 // dialogue
 #include "demo/demo_dialogue.hpp"
 
-PauseMenuComponent* PauseMenuComponent::instance = nullptr;
+PauseMenu* PauseMenu::instance = nullptr;
 
-void PauseMenuComponent::create()
+void PauseMenu::create()
 {
     if (instance == nullptr)
     {
-        instance = new PauseMenuComponent();
+        instance = new PauseMenu();
     }
 }
 
-void PauseMenuComponent::destroy()
+void PauseMenu::destroy()
 {
     if (instance != nullptr)
     {
@@ -28,7 +28,7 @@ void PauseMenuComponent::destroy()
     instance = nullptr;
 }
 
-PauseMenuComponent* PauseMenuComponent::getInstance()
+PauseMenu* PauseMenu::getInstance()
 {
     if (instance == nullptr)
     {
@@ -37,7 +37,7 @@ PauseMenuComponent* PauseMenuComponent::getInstance()
     return instance;
 }
 
-void PauseMenuComponent::cleanup()
+void PauseMenu::cleanup()
 {
     if (pauseMenu != nullptr)
     {
@@ -47,7 +47,7 @@ void PauseMenuComponent::cleanup()
     }
 }
 
-void PauseMenuComponent::resetHook()
+void PauseMenu::resetHook()
 {
     pauseMessage = "Pause";
     options = menuOptions;
@@ -61,7 +61,7 @@ void PauseMenuComponent::resetHook()
     }
 }
 
-ViewState PauseMenuComponent::updateHook()
+ViewState PauseMenu::updateHook()
 {
     // dialogue should be started, but has not
     if (isDialogueStarted && !dialogue->IsActive())
@@ -89,7 +89,7 @@ ViewState PauseMenuComponent::updateHook()
     return ViewState::DEFAULT;
 }
 
-void PauseMenuComponent::closeHook()
+void PauseMenu::closeHook()
 {
     resetMenu();
 
@@ -99,7 +99,7 @@ void PauseMenuComponent::closeHook()
 
 // menu navigation handlers
 
-ViewState PauseMenuComponent::openDebugMenu()
+ViewState PauseMenu::openDebugMenu()
 {
     switch (cameraSystem.getMode())
     {
@@ -125,84 +125,84 @@ ViewState PauseMenuComponent::openDebugMenu()
     return changeMenu(debugOptions);
 }
 
-ViewState PauseMenuComponent::openSkillMenu()
+ViewState PauseMenu::openSkillMenu()
 {
     return changeMenu(skillOptions);
 }
 
-ViewState PauseMenuComponent::openItemMenu()
+ViewState PauseMenu::openItemMenu()
 {
     return changeMenu(itemOptions);
 }
 
-ViewState PauseMenuComponent::openPersonaMenu()
+ViewState PauseMenu::openPersonaMenu()
 {
     return changeMenu(personaOptions);
 }
 
-ViewState PauseMenuComponent::openEquipMenu()
+ViewState PauseMenu::openEquipMenu()
 {
     return changeMenu(equipOptions);
 }
 
-ViewState PauseMenuComponent::openStatusMenu()
+ViewState PauseMenu::openStatusMenu()
 {
     return changeMenu(statsOptions);
 }
 
-ViewState PauseMenuComponent::openSLinkMenu()
+ViewState PauseMenu::openSLinkMenu()
 {
     return changeMenu(sLinkOptions);
 }
 
-ViewState PauseMenuComponent::openSystemMenu()
+ViewState PauseMenu::openSystemMenu()
 {
     return changeMenu(systemOptions);
 }
 
-ViewState PauseMenuComponent::openCharacterAnimMenu()
+ViewState PauseMenu::openCharacterAnimMenu()
 {
     return changeMenu(characterAnimOptions);
 }
 
 // selection handlers
 
-ViewState PauseMenuComponent::skillOptionSelected()
+ViewState PauseMenu::skillOptionSelected()
 {
     return changeMenu(skills);
 }
 
-ViewState PauseMenuComponent::itemOptionSelected()
+ViewState PauseMenu::itemOptionSelected()
 {
     return ViewState::KEEP_CURRENT;
 }
 
-ViewState PauseMenuComponent::equipOptionSelected()
+ViewState PauseMenu::equipOptionSelected()
 {
     return ViewState::KEEP_CURRENT;
 }
 
-ViewState PauseMenuComponent::personaOptionSelected()
+ViewState PauseMenu::personaOptionSelected()
 {
     return ViewState::KEEP_CURRENT;
 }
 
-ViewState PauseMenuComponent::statsOptionSelected()
+ViewState PauseMenu::statsOptionSelected()
 {
     return ViewState::KEEP_CURRENT;
 }
 
-ViewState PauseMenuComponent::sLinkOptionSelected()
+ViewState PauseMenu::sLinkOptionSelected()
 {
     return ViewState::KEEP_CURRENT;
 }
 
-ViewState PauseMenuComponent::systemOptionSelected()
+ViewState PauseMenu::systemOptionSelected()
 {
     return ViewState::KEEP_CURRENT;
 }
 
-ViewState PauseMenuComponent::debugOptionSelected()
+ViewState PauseMenu::debugOptionSelected()
 {
     ViewState selectedView;
     switch (static_cast<DebugOption>(selectedOption))
@@ -274,7 +274,7 @@ ViewState PauseMenuComponent::debugOptionSelected()
     return selectedView;
 }
 
-ViewState PauseMenuComponent::characterAnimOptionSelected()
+ViewState PauseMenu::characterAnimOptionSelected()
 {
     animationCtrl->stop();
 

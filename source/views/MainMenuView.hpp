@@ -1,7 +1,7 @@
 #pragma once
 #include "components/GraphicsComponent.hpp"
 #include "components/TextComponent.hpp"
-#include "components/menus/MainMenuComponent.hpp"
+#include "components/menus/MainMenu.hpp"
 #include "controllers/MusicController.hpp"
 #include "managers/MathManager.hpp"
 #include "managers/RenderManager.hpp"
@@ -10,7 +10,7 @@
 class MainMenuView : public BaseView
 {
   private:
-    MainMenuComponent* mainMenuCmpt = nullptr;
+    MainMenu* mainMenuCmpt = nullptr;
     int bg[3];
 
     // for silhouette animation

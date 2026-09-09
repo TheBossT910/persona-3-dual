@@ -1,18 +1,18 @@
-#include "BattleMenuComponent.hpp"
+#include "BattleMenu.hpp"
 #include "core/globals.hpp"
 #include "events/UIEvents.hpp"
 
-BattleMenuComponent* BattleMenuComponent::instance = nullptr;
+BattleMenu* BattleMenu::instance = nullptr;
 
-void BattleMenuComponent::create()
+void BattleMenu::create()
 {
     if (instance == nullptr)
     {
-        instance = new BattleMenuComponent();
+        instance = new BattleMenu();
     }
 }
 
-void BattleMenuComponent::destroy()
+void BattleMenu::destroy()
 {
     if (instance != nullptr)
     {
@@ -21,7 +21,7 @@ void BattleMenuComponent::destroy()
     instance = nullptr;
 }
 
-BattleMenuComponent* BattleMenuComponent::getInstance()
+BattleMenu* BattleMenu::getInstance()
 {
     if (instance == nullptr)
     {
@@ -31,7 +31,7 @@ BattleMenuComponent* BattleMenuComponent::getInstance()
 }
 
 // option loaders
-void BattleMenuComponent::loadActionOptions(std::array<ActionBase*, 4>* actions, std::string name)
+void BattleMenu::loadActionOptions(std::array<ActionBase*, 4>* actions, std::string name)
 {
     // skip if action options have already been loaded
     if (loadedOption == BattleMenuOptions::ACTION)
@@ -52,14 +52,14 @@ void BattleMenuComponent::loadActionOptions(std::array<ActionBase*, 4>* actions,
 
     for (int i = 0; i < count; i++)
     {
-        MenuOption option = {actions->at(i)->name.c_str(), -1, MENU_BIND(BattleMenuComponent, battleOptionSelected)};
+        MenuOption option = {actions->at(i)->name.c_str(), -1, MENU_BIND(BattleMenu, battleOptionSelected)};
         battleOptions.push_back(option);
     }
 
     options = battleOptions;
 }
 
-void BattleMenuComponent::loadSkillOptions(PersonaBase* persona)
+void BattleMenu::loadSkillOptions(PersonaBase* persona)
 {
     // skip if action options have already been loaded
     if (loadedOption == BattleMenuOptions::SKILL)
@@ -80,15 +80,14 @@ void BattleMenuComponent::loadSkillOptions(PersonaBase* persona)
 
     for (int i = 0; i < count; i++)
     {
-        MenuOption option = {
-            persona->skills[i]->name.c_str(), -1, MENU_BIND(BattleMenuComponent, battleOptionSelected)};
+        MenuOption option = {persona->skills[i]->name.c_str(), -1, MENU_BIND(BattleMenu, battleOptionSelected)};
         battleOptions.push_back(option);
     }
 
     options = battleOptions;
 }
 
-void BattleMenuComponent::loadPersonaOptions(etl::vector<PersonaBase*, 13>* personas)
+void BattleMenu::loadPersonaOptions(etl::vector<PersonaBase*, 13>* personas)
 {
     if (loadedOption == BattleMenuOptions::PERSONA)
     {
@@ -105,14 +104,14 @@ void BattleMenuComponent::loadPersonaOptions(etl::vector<PersonaBase*, 13>* pers
 
     for (int i = 0; i < count; i++)
     {
-        MenuOption option = {personas->at(i)->name.c_str(), -1, MENU_BIND(BattleMenuComponent, battleOptionSelected)};
+        MenuOption option = {personas->at(i)->name.c_str(), -1, MENU_BIND(BattleMenu, battleOptionSelected)};
         battleOptions.push_back(option);
     }
 
     options = battleOptions;
 }
 
-void BattleMenuComponent::loadTargetOptions(etl::vector<BattleParticipant*, 13>* targets, bool healTarget)
+void BattleMenu::loadTargetOptions(etl::vector<BattleParticipant*, 13>* targets, bool healTarget)
 {
     BattleMenuOptions targetLoadedOption =
         healTarget ? BattleMenuOptions::TARGET_HEAL : BattleMenuOptions::TARGET_ENEMY;
@@ -135,14 +134,14 @@ void BattleMenuComponent::loadTargetOptions(etl::vector<BattleParticipant*, 13>*
         if (targets->at(i)->hp <= 0)
             continue;
 
-        MenuOption option = {targets->at(i)->name.c_str(), -1, MENU_BIND(BattleMenuComponent, battleOptionSelected)};
+        MenuOption option = {targets->at(i)->name.c_str(), -1, MENU_BIND(BattleMenu, battleOptionSelected)};
         battleOptions.push_back(option);
     }
 
     options = battleOptions;
 }
 
-void BattleMenuComponent::loadAllOutAttackConfirmation()
+void BattleMenu::loadAllOutAttackConfirmation()
 {
     if (loadedOption == BattleMenuOptions::ALL_OUT_ATTACK)
     {
@@ -156,15 +155,15 @@ void BattleMenuComponent::loadAllOutAttackConfirmation()
     loadedOption = BattleMenuOptions::ALL_OUT_ATTACK;
     pauseMessage = "Confirm All-out-attack?";
 
-    MenuOption yes = {"Yes", -1, MENU_BIND(BattleMenuComponent, battleOptionSelected)};
-    MenuOption no = {"No", -1, MENU_BIND(BattleMenuComponent, battleOptionSelected)};
+    MenuOption yes = {"Yes", -1, MENU_BIND(BattleMenu, battleOptionSelected)};
+    MenuOption no = {"No", -1, MENU_BIND(BattleMenu, battleOptionSelected)};
     battleOptions.push_back(yes);
     battleOptions.push_back(no);
 
     options = battleOptions;
 }
 
-void BattleMenuComponent::loadAlertOptions(const std::string& text)
+void BattleMenu::loadAlertOptions(const std::string& text)
 {
     if (loadedOption == BattleMenuOptions::ALERT)
     {
@@ -179,12 +178,12 @@ void BattleMenuComponent::loadAlertOptions(const std::string& text)
     options = {};
 }
 
-bool BattleMenuComponent::isAlertExpired(int durationFrames) const
+bool BattleMenu::isAlertExpired(int durationFrames) const
 {
     return (frame - alertStartFrame) >= durationFrames;
 }
 
-void BattleMenuComponent::resetHook()
+void BattleMenu::resetHook()
 {
     pauseMessage = "";
     options = {};
@@ -194,7 +193,7 @@ void BattleMenuComponent::resetHook()
     selectedBattleOption = -1;
 }
 
-void BattleMenuComponent::resetLoadedOptions()
+void BattleMenu::resetLoadedOptions()
 {
     loadedOption = BattleMenuOptions::NONE;
     messagePrinted = false;
@@ -206,7 +205,7 @@ void BattleMenuComponent::resetLoadedOptions()
     startIndex = 0;
 }
 
-ViewState BattleMenuComponent::updateHook()
+ViewState BattleMenu::updateHook()
 {
     if (loadedOption == BattleMenuOptions::ALERT)
     {
@@ -223,28 +222,28 @@ ViewState BattleMenuComponent::updateHook()
 }
 
 // option handlers
-ViewState BattleMenuComponent::battleOptionSelected()
+ViewState BattleMenu::battleOptionSelected()
 {
     selectedBattleOption = selectedOption;
     resetLoadedOptions();
     return ViewState::KEEP_CURRENT;
 }
 
-int BattleMenuComponent::consumeSelectedBattleOption()
+int BattleMenu::consumeSelectedBattleOption()
 {
     int battleOption = selectedBattleOption;
     selectedBattleOption = -1;
     return battleOption;
 }
 
-bool BattleMenuComponent::consumeCancel()
+bool BattleMenu::consumeCancel()
 {
     bool result = isCancelled;
     isCancelled = false;
     return result;
 }
 
-void BattleMenuComponent::prevOption()
+void BattleMenu::prevOption()
 {
     isCancelled = true;
     selectedBattleOption = -1;
