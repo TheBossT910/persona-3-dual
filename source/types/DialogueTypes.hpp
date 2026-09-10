@@ -58,10 +58,4 @@ struct DialogueConfig
         : spritePayloads(iSpritePayloads), text(iText), textAlt(iTextAlt), screen(iScreen)
     {
     }
-
-    // config only for debug purposes
-    DialogueConfig(TextComponent* iText) : text(iText)
-    {
-        textAlt = text;
-    }
 };

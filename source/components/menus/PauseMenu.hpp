@@ -1,5 +1,4 @@
 #pragma once
-#include "components/DialogueComponent.hpp"
 #include "components/menus/UIMenu.hpp"
 #include "controllers/AnimationController.hpp"
 #include "managers/RenderManager.hpp"
@@ -19,7 +18,6 @@ enum class DebugOption
     INTRO_VIDEO,
     CUTSCENE_1,
     CUTSCENE_2,
-    DEBUG_DIALOGUE,
     TOGGLE_BILLBOARDS,
     TOGGLE_DEBUG_PRINT,
     PLAY_CHARACTER_ANIM,
@@ -50,7 +48,7 @@ class PauseMenu : public UIMenu
         {"System", -1, MENU_BIND(PauseMenu, openSystemMenu)},
     };
 
-    etl::array<MenuOption, 16> debugOptions = {
+    etl::array<MenuOption, 15> debugOptions = {
         MenuOption{"DisclaimerView", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"IntroView", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"MainMenuView", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
@@ -62,7 +60,6 @@ class PauseMenu : public UIMenu
         {"IntroVideo", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"Cutscene1", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"Cutscene2", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
-        {"Debug Dialogue", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"Toggle Billboards", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"Toggle Debug Print", -1, MENU_BIND(PauseMenu, debugOptionSelected)},
         {"Play Character Animations", -1, MENU_BIND(PauseMenu, openCharacterAnimMenu)},
@@ -187,10 +184,6 @@ class PauseMenu : public UIMenu
     ViewState systemOptionSelected();
     ViewState characterAnimOptionSelected();
 
-    bool isDialogueStarted = false;
-    bool isDialoguePrevActive = false;
-    ae::Entity* pauseMenu = nullptr;
-    DialogueComponent* dialogue = nullptr;
     AnimationController* animationCtrl = AnimationController::getInstance();
 
     void resetHook() override;
@@ -200,8 +193,6 @@ class PauseMenu : public UIMenu
     static void create();
     static void destroy();
     static PauseMenu* getInstance();
-
-    void cleanup();
 
     ViewState updateHook() override;
 

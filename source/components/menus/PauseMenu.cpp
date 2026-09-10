@@ -5,8 +5,6 @@
 
 // sfx
 #include "soundbank.h"
-// dialogue
-#include "demo/demo_dialogue.hpp"
 
 PauseMenu* PauseMenu::instance = nullptr;
 
@@ -22,7 +20,6 @@ void PauseMenu::destroy()
 {
     if (instance != nullptr)
     {
-        instance->cleanup();
         delete instance;
     }
     instance = nullptr;
@@ -37,55 +34,15 @@ PauseMenu* PauseMenu::getInstance()
     return instance;
 }
 
-void PauseMenu::cleanup()
-{
-    if (pauseMenu != nullptr)
-    {
-        engine.DestroyEntity(pauseMenu);
-        pauseMenu = nullptr;
-        dialogue = nullptr;
-    }
-}
-
 void PauseMenu::resetHook()
 {
     pauseMessage = "Pause";
     options = menuOptions;
     isClosed = false;
-
-    if (pauseMenu == nullptr)
-    {
-        pauseMenu = engine.CreateEntity();
-        dialogue = engine.CreateComponent<DialogueComponent>();
-        pauseMenu->AddComponent(dialogue);
-    }
 }
 
 ViewState PauseMenu::updateHook()
 {
-    // dialogue should be started, but has not
-    if (isDialogueStarted && !dialogue->IsActive())
-    {
-        dialogue->configureDialogue(DialogueConfig(text));
-        dialogue->start(demo_dialogue_init());
-
-        isDialogueStarted = false;
-        isDialoguePrevActive = false;
-    }
-
-    // dialogue controller takes full control when active
-    if (dialogue->IsActive())
-    {
-        isDialoguePrevActive = true;
-        return ViewState::KEEP_CURRENT;
-    }
-
-    if (!dialogue->IsActive() && isDialoguePrevActive)
-    {
-        isDialoguePrevActive = false;
-        ae::BroadcastEvent(Event::RenderUIText{});
-    }
-
     return ViewState::DEFAULT;
 }
 
@@ -240,10 +197,7 @@ ViewState PauseMenu::debugOptionSelected()
     case DebugOption::CUTSCENE_2:
         selectedView = ViewState::CUTSCENE_2;
         break;
-    case DebugOption::DEBUG_DIALOGUE:
-        isDialogueStarted = true;
-        selectedView = ViewState::KEEP_CURRENT;
-        break;
+
     case DebugOption::TOGGLE_BILLBOARDS:
         Globals::enableBillboards = !Globals::enableBillboards;
         isActive = false;
