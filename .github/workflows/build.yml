@@ -116,6 +116,13 @@ jobs:
           ccache -z  # Zero stats so per-run hit rate is visible in the log
 
       # --- 3. Build & compile ---
+      - name: Ensure required build tools are present
+        run: |
+          if ! command -v cmake >/dev/null 2>&1; then
+            apt-get update
+            apt-get install -y --no-install-recommends cmake
+          fi
+
       - name: Generate version tag
         id: version
         if: github.event_name != 'pull_request'
@@ -145,13 +152,13 @@ jobs:
           path: ${{ github.workspace }}/build-version.txt
           retention-days: 1
 
-      # Print hit/miss stats after the build so cache effectiveness is visible
-      # in the Actions log without having to dig into ccache internals.
+      # Primary build path during migration: CMake presets.
+      # Print ccache stats after the build so cache effectiveness is visible
+      # in the Actions log.
       - name: Compile ROM
         run: |
-          export CC="ccache arm-none-eabi-gcc"
-          export CXX="ccache arm-none-eabi-g++"
-          make
+          cmake --preset nds-release
+          cmake --build --preset build-nds-sdcard -j"$(nproc)"
           ccache -s
 
       - name: Compress and Package Assets

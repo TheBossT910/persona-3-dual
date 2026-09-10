@@ -23,7 +23,7 @@ persona-3-dual.lst
 # data
 /data/environments/*
 !/data/environments/.gitkeep
-
+/source/data/environmentDb.cpp
 /data/fonts/*
 !/data/fonts/.gitkeep
 
@@ -52,5 +52,5 @@ sdcard.img
 sdcard.img.idx
 .venv/
 .idea/
-
+out/
 compile_commands.json

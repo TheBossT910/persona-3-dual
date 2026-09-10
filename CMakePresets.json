@@ -1,0 +1,175 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 23,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "host-debug",
+            "displayName": "Host Debug (tests on)",
+            "binaryDir": "${sourceDir}/out/build/host-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "P3D_BUILD_TESTS": "ON",
+                "P3D_ENABLE_ASSETS": "OFF",
+                "P3D_ENABLE_SDCARD": "OFF",
+                "P3D_BUILD_NDS": "OFF"
+            }
+        },
+        {
+            "name": "host-assets",
+            "displayName": "Host Tools (assets + sdcard targets)",
+            "binaryDir": "${sourceDir}/out/build/host-assets",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "P3D_BUILD_TESTS": "OFF",
+                "P3D_ENABLE_ASSETS": "ON",
+                "P3D_ENABLE_SDCARD": "ON",
+                "P3D_BUILD_NDS": "OFF"
+            }
+        },
+        {
+            "name": "nds-debug",
+            "displayName": "NDS Debug",
+            "binaryDir": "${sourceDir}/out/build/nds-debug",
+            "toolchainFile": "${sourceDir}/cmake/toolchains/blocksds-arm9.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -DNDEBUG -ggdb",
+                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -DNDEBUG -ggdb",
+                "P3D_BUILD_TESTS": "OFF",
+                "P3D_ENABLE_ASSETS": "ON",
+                "P3D_ENABLE_SDCARD": "OFF",
+                "P3D_BUILD_NDS": "ON"
+            }
+        },
+        {
+            "name": "nds-debug-sdcard",
+            "displayName": "NDS Debug (with sdcard)",
+            "binaryDir": "${sourceDir}/out/build/nds-debug-sdcard",
+            "toolchainFile": "${sourceDir}/cmake/toolchains/blocksds-arm9.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -DNDEBUG -ggdb",
+                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -DNDEBUG -ggdb",
+                "P3D_BUILD_TESTS": "OFF",
+                "P3D_ENABLE_ASSETS": "ON",
+                "P3D_ENABLE_SDCARD": "ON",
+                "P3D_BUILD_NDS": "ON"
+            }
+        },
+        {
+            "name": "nds-release",
+            "displayName": "NDS Release (with sdcard)",
+            "binaryDir": "${sourceDir}/out/build/nds-release",
+            "toolchainFile": "${sourceDir}/cmake/toolchains/blocksds-arm9.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "P3D_BUILD_TESTS": "OFF",
+                "P3D_ENABLE_ASSETS": "ON",
+                "P3D_ENABLE_SDCARD": "ON",
+                "P3D_BUILD_NDS": "ON"
+            }
+        },
+        {
+            "name": "default",
+            "displayName": "Default (NDS Release (with sdcard))",
+            "inherits": "nds-release"
+        },
+        {
+            "name": "release",
+            "displayName": "Release (NDS Release (with sdcard))",
+            "inherits": "nds-release"
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug (NDS Debug (with sdcard))",
+            "inherits": "nds-debug-sdcard"
+        },
+        {
+            "name": "aegis-engine-host-debug",
+            "displayName": "Aegis Engine Host Debug",
+            "binaryDir": "${sourceDir}/out/build/aegis-host-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "P3D_BUILD_NDS": "OFF",
+                "P3D_BUILD_TESTS": "OFF",
+                "P3D_ENABLE_ASSETS": "OFF",
+                "P3D_ENABLE_SDCARD": "OFF",
+                "P3D_USE_BUNDLED_AEGIS_ENGINE": "ON",
+                "P3D_BUILD_AEGIS_ENGINE_TESTS": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-host-tests",
+            "configurePreset": "host-debug",
+            "targets": [
+                "p3d_tests"
+            ]
+        },
+        {
+            "name": "build-assets",
+            "configurePreset": "host-assets",
+            "targets": [
+                "p3d_assets"
+            ]
+        },
+        {
+            "name": "build-nds-debug-sdcard",
+            "configurePreset": "nds-debug-sdcard",
+            "targets": [
+                "p3d_sdcard_image"
+            ]
+        },
+        {
+            "name": "build-nds-sdcard",
+            "configurePreset": "nds-release",
+            "targets": [
+                "p3d_sdcard_image"
+            ]
+        },
+        {
+            "name": "default",
+            "displayName": "Default (NDS + sdcard)",
+            "inherits": "build-nds-sdcard"
+        },
+        {
+            "name": "release",
+            "displayName": "Release (NDS + sdcard)",
+            "inherits": "build-nds-sdcard"
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug (NDS + sdcard)",
+            "inherits": "build-nds-debug-sdcard"
+        },
+        {
+            "name": "build-aegis-engine-tests",
+            "displayName": "Build Aegis Engine Tests",
+            "configurePreset": "aegis-engine-host-debug",
+            "targets": [
+                "aegis-engine_headers_smoke"
+            ]
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test-host",
+            "configurePreset": "host-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "test-aegis-engine-host",
+            "configurePreset": "aegis-engine-host-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
+}
